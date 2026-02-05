@@ -1,10 +1,9 @@
 /**
  * PROYECTO: Visor Profesional FIEBDC-3 (BC3)
- * VERSION: 3.57 (New Project & Import Feature)
+ * VERSION: 3.64 (Decimal Point Export)
  * DESCRIPCION: 
- * - [NUEVO] createNew: Crear proyecto vacío con nodo raíz.
- * - [NUEVO] importPartial: Importar conceptos y descompuestos sin sobrescribir existentes.
- * - [MEJORA] Integración UI para nuevos flujos de trabajo.
+ * - [CORRECCIÓN] Exportación utilizando punto decimal en lugar de coma, según solicitud explícita.
+ * - Mantiene 3 decimales para rendimientos y 2 para precios.
  */
 
 class BC3Engine {
@@ -27,18 +26,15 @@ class BC3Engine {
         this.metadata.currency = '€';
     }
 
-    // [NUEVO] Crear proyecto desde cero
     createNew(projectName) {
         this.reset();
         
         let rootCode = projectName.trim();
         if (!rootCode) rootCode = "PROYECTO";
-        // Asegurar que termina en # o ## para ser válido como raíz
         if (!rootCode.endsWith('#')) rootCode += '##';
         
         this.rootCode = rootCode;
         
-        // Crear concepto raíz
         this.db.set(rootCode, {
             code: rootCode,
             unit: '',
@@ -53,20 +49,17 @@ class BC3Engine {
         this.metadata.software = 'BC3 Pro Analyzer';
     }
 
-    // [NUEVO] Importar parcial (fusión)
     async importPartial(content) {
         const lines = content.split(/\r\n|\n|\r/);
         let importedCount = 0;
         const newCodes = new Set();
 
-        // 1. Importar Conceptos (~C) SOLO si no existen
         for (let line of lines) {
             if (!line.startsWith('~C')) continue;
             const p = line.split('|');
             const code = p[1]?.trim();
             if (!code) continue;
 
-            // Si ya existe, lo saltamos (REGLA: no sobrescribir)
             if (this.db.has(code)) continue;
 
             const data = this.initConcept(code);
@@ -80,14 +73,11 @@ class BC3Engine {
             importedCount++;
         }
 
-        // 2. Importar Relaciones (~D) SOLO para los conceptos nuevos
-        // Esto preserva la descomposición de los elementos que ya existían en mi proyecto
         for (let line of lines) {
             if (!line.startsWith('~D')) continue;
             const parts = line.split('|');
             const parentCode = parts[1]?.trim();
             
-            // Solo procesamos si el padre es uno de los que acabamos de importar
             if (!newCodes.has(parentCode)) continue; 
 
             const parent = this.resolveConcept(parentCode);
@@ -111,7 +101,6 @@ class BC3Engine {
                             yield: isNaN(valYield) ? 1 : valYield 
                         });
                         
-                        // Mapeo inverso para navegación (opcional pero útil)
                         const normChild = this.normalizeCode(childCode);
                         this.parentMap.set(normChild, parent.code);
                     }
@@ -120,14 +109,12 @@ class BC3Engine {
             }
         }
 
-        // 3. Importar Textos (~T) SOLO para conceptos nuevos
         let currentTextConcept = null;
         for (let line of lines) {
             const trimmedLine = line.trim();
             if (trimmedLine.startsWith('~T')) {
                 const parts = line.split('|');
                 const code = parts[1]?.trim();
-                // Solo si es un código nuevo
                 if (newCodes.has(code)) {
                     const concept = this.resolveConcept(code);
                     if (concept) {
@@ -255,7 +242,6 @@ class BC3Engine {
         this.reset();
         const lines = content.split(/\r\n|\n|\r/);
         
-        // PASO 1: Conceptos (~C)
         for (let line of lines) {
             if (!line.startsWith('~C')) continue;
             const p = line.split('|');
@@ -269,7 +255,6 @@ class BC3Engine {
             data.type = p[6] || '0';
         }
 
-        // PASO 2: Metadatos (~V, ~K)
         for (let line of lines) {
             const p = line.split('|');
             const t = p[0].replace('~', '').toUpperCase();
@@ -281,7 +266,6 @@ class BC3Engine {
             if (t === 'K') { this.parseK(p); }
         }
 
-        // PASO 3: Relaciones y Textos (~D, ~T, ~M)
         let currentTextConcept = null; 
 
         for (let line of lines) {
@@ -343,7 +327,6 @@ class BC3Engine {
             }
         }
         
-        // [MEJORA] Forzamos 3 decimales para el rendimiento (DR)
         this.metadata.dr = 3;
         
         this.identifyRoot();
@@ -462,12 +445,21 @@ class BC3Engine {
 
     exportToBC3() {
         const lines = [];
-        const fNum = (n) => (n === undefined || n === null) ? '' : n.toString().replace('.', ',');
-        const fNum3 = (n) => (n === undefined || n === null) ? '' : n.toFixed(3).replace('.', ',');
+        
+        // [MODIFICADO] Función para precios (2 decimales fijos) - USA PUNTO DECIMAL
+        const fNumPrice = (n) => (n === undefined || n === null) ? '' : n.toFixed(2);
+        
+        // [MODIFICADO] Función para rendimientos y factores (3 decimales fijos) - USA PUNTO DECIMAL
+        const fNumYield = (n) => (n === undefined || n === null) ? '' : n.toFixed(3);
+        
+        // [MODIFICADO] Función general (para mediciones y otros) - USA PUNTO DECIMAL
+        const fNum = (n) => (n === undefined || n === null) ? '' : n.toString();
 
         lines.push(`~V|${this.metadata.owner || ''}|${this.metadata.version}|${this.metadata.software}|`);
 
-        this.metadata.dr = 3;
+        // Sincronizamos metadatos para asegurar que el receptor sepa los decimales
+        this.metadata.dr = 3; // Decimales de Rendimiento
+        this.metadata.dc = 2; // Decimales de Coste (Precio)
 
         const kVals = [
             this.metadata.dn, this.metadata.dd, this.metadata.ds, 
@@ -477,7 +469,7 @@ class BC3Engine {
         lines.push(`~K|${kVals}\\${this.metadata.currency}|`);
 
         for (const [code, c] of this.db) {
-            lines.push(`~C|${c.code}|${c.unit}|${c.summary}|${fNum(c.price)}||${c.type}|`);
+            lines.push(`~C|${c.code}|${c.unit}|${c.summary}|${fNumPrice(c.price)}||${c.type}|`);
         }
 
         for (const [code, c] of this.db) {
@@ -485,7 +477,7 @@ class BC3Engine {
                 let dLine = `~D|${c.code}|`;
                 const childParts = [];
                 c.children.forEach(child => {
-                    childParts.push(`${child.code}\\${fNum3(child.factor)}\\${fNum3(child.yield)}`);
+                    childParts.push(`${child.code}\\${fNumYield(child.factor)}\\${fNumYield(child.yield)}`);
                 });
                 dLine += childParts.join('\\') + '|';
                 lines.push(dLine);
@@ -532,7 +524,6 @@ const ui = {
     currentMeasKey: null,
     currentNode: null,
     
-    // [NUEVO] UI para crear nuevo proyecto
     createNewProject: () => {
         const name = prompt("Introduzca el nombre del nuevo proyecto (Raíz):", "NUEVO PROYECTO");
         if(name) {
@@ -737,6 +728,7 @@ const ui = {
         }
     },
     
+    // --- NUEVO: SISTEMA TOAST ---
     showToast: (message) => {
         let toast = document.getElementById('toast-notification');
         if (!toast) {
