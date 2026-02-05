@@ -1,0 +1,522 @@
+<!-- 
+    PROYECTO: Visor Profesional FIEBDC-3 (BC3)
+    VERSION: 3.57
+    DESCRIPCION: 
+    - [NUEVO] Botones para Crear Nuevo Proyecto e Importar (Fusionar) BC3.
+-->
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Visor Profesional FIEBDC-3 (BC3) v3.57</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Estilos Personalizados -->
+    <link rel="stylesheet" href="style.css">
+</head>
+<body class="overflow-hidden bg-slate-100">
+
+    <!-- Loader -->
+    <div id="loader" class="loading-overlay">
+        <div class="flex flex-col items-center">
+            <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+            <p id="loader-text" class="mt-4 text-slate-600 font-semibold tracking-wide">Procesando...</p>
+        </div>
+    </div>
+
+    <!-- Modal de Selección de Listados -->
+    <div id="modal-reports" class="modal-overlay">
+        <div class="bg-white rounded-xl shadow-2xl w-full max-w-4xl overflow-hidden transform transition-all scale-100 max-h-[90vh] overflow-y-auto">
+            <div class="px-6 py-4 bg-slate-50 border-b border-slate-100 flex justify-between items-center sticky top-0 z-10">
+                <h3 class="font-bold text-slate-700 flex items-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-purple-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                    Centro de Informes
+                </h3>
+                <button onclick="reports.closeListadosModal()" class="text-slate-400 hover:text-red-500 transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+            
+            <div class="p-6">
+                <!-- Sección 1: Documentos Generales -->
+                <h4 class="text-xs font-black text-slate-400 uppercase tracking-widest mb-4 border-b pb-2">Documentación General</h4>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+                    <!-- Presupuesto -->
+                    <button onclick="reports.generateBudgetReport()" class="flex flex-col gap-2 p-4 border border-slate-200 rounded-xl hover:bg-blue-50 hover:border-blue-300 transition-all group text-left h-full">
+                        <div class="flex items-center justify-between w-full">
+                            <div class="bg-blue-100 p-2 rounded-lg group-hover:bg-blue-200 transition-colors">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                            </div>
+                        </div>
+                        <div>
+                            <h4 class="font-bold text-slate-700 text-sm">Presupuesto</h4>
+                            <p class="text-[10px] text-slate-500">Resumen económico jerarquizado por capítulos.</p>
+                        </div>
+                    </button>
+
+                    <!-- Mediciones -->
+                    <button onclick="reports.generateMeasurementsReport()" class="flex flex-col gap-2 p-4 border border-slate-200 rounded-xl hover:bg-purple-50 hover:border-purple-300 transition-all group text-left h-full">
+                        <div class="flex items-center justify-between w-full">
+                            <div class="bg-purple-100 p-2 rounded-lg group-hover:bg-purple-200 transition-colors">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-purple-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4h13M3 8h9m-9 4h6m4 0l4-4m0 0l4 4m-4-4v12" />
+                                </svg>
+                            </div>
+                        </div>
+                        <div>
+                            <h4 class="font-bold text-slate-700 text-sm">Mediciones</h4>
+                            <p class="text-[10px] text-slate-500">Detalle de líneas de medición y fórmulas.</p>
+                        </div>
+                    </button>
+
+                    <!-- Cuadro de Precios 1 -->
+                    <button onclick="reports.generatePriceTable1Report()" class="flex flex-col gap-2 p-4 border border-slate-200 rounded-xl hover:bg-emerald-50 hover:border-emerald-300 transition-all group text-left h-full">
+                        <div class="flex items-center justify-between w-full">
+                            <div class="bg-emerald-100 p-2 rounded-lg group-hover:bg-emerald-200 transition-colors">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                </svg>
+                            </div>
+                        </div>
+                        <div>
+                            <h4 class="font-bold text-slate-700 text-sm">Precios Nº 1</h4>
+                            <p class="text-[10px] text-slate-500">Precios unitarios con importe en letra.</p>
+                        </div>
+                    </button>
+
+                    <!-- Cuadro de Precios 2 -->
+                    <button onclick="reports.generatePriceTable2Report()" class="flex flex-col gap-2 p-4 border border-slate-200 rounded-xl hover:bg-amber-50 hover:border-amber-300 transition-all group text-left h-full">
+                        <div class="flex items-center justify-between w-full">
+                            <div class="bg-amber-100 p-2 rounded-lg group-hover:bg-amber-200 transition-colors">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z" />
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.488 9H15V3.512A9.025 9.025 0 0120.488 9z" />
+                                </svg>
+                            </div>
+                        </div>
+                        <div>
+                            <h4 class="font-bold text-slate-700 text-sm">Precios Nº 2</h4>
+                            <p class="text-[10px] text-slate-500">Desglose por naturaleza (MO, MQ, MT).</p>
+                        </div>
+                    </button>
+                </div>
+
+                <!-- Sección 2: Listados de Recursos Básicos -->
+                <h4 class="text-xs font-black text-slate-400 uppercase tracking-widest mb-4 border-b pb-2">Listados de Recursos Básicos</h4>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+                    <!-- Mano de Obra -->
+                    <button onclick="reports.generateLaborReport()" class="flex items-center gap-3 p-3 border border-slate-200 rounded-xl hover:bg-orange-50 hover:border-orange-300 transition-all group text-left">
+                        <div class="bg-orange-100 p-2 rounded-full group-hover:bg-orange-200 transition-colors">
+                            <span class="text-lg">👷</span>
+                        </div>
+                        <div>
+                            <h4 class="font-bold text-slate-700 text-sm">Mano de Obra</h4>
+                            <p class="text-[10px] text-slate-500">Listado simple.</p>
+                        </div>
+                    </button>
+
+                    <!-- Maquinaria -->
+                    <button onclick="reports.generateMachineryReport()" class="flex items-center gap-3 p-3 border border-slate-200 rounded-xl hover:bg-yellow-50 hover:border-yellow-300 transition-all group text-left">
+                        <div class="bg-yellow-100 p-2 rounded-full group-hover:bg-yellow-200 transition-colors">
+                            <span class="text-lg">🚜</span>
+                        </div>
+                        <div>
+                            <h4 class="font-bold text-slate-700 text-sm">Maquinaria</h4>
+                            <p class="text-[10px] text-slate-500">Listado simple.</p>
+                        </div>
+                    </button>
+
+                    <!-- Materiales -->
+                    <button onclick="reports.generateMaterialsReport()" class="flex items-center gap-3 p-3 border border-slate-200 rounded-xl hover:bg-teal-50 hover:border-teal-300 transition-all group text-left">
+                        <div class="bg-teal-100 p-2 rounded-full group-hover:bg-teal-200 transition-colors">
+                            <span class="text-lg">🧱</span>
+                        </div>
+                        <div>
+                            <h4 class="font-bold text-slate-700 text-sm">Materiales</h4>
+                            <p class="text-[10px] text-slate-500">Listado simple.</p>
+                        </div>
+                    </button>
+                </div>
+
+                <!-- Sección 3: Análisis Detallado -->
+                <h4 class="text-xs font-black text-slate-400 uppercase tracking-widest mb-4 border-b pb-2">Análisis de Precios</h4>
+                <div class="grid grid-cols-1">
+                    <!-- Descompuestos -->
+                    <button onclick="reports.generateDecompositionReport()" class="flex items-center gap-4 p-4 border border-slate-200 rounded-xl hover:bg-indigo-50 hover:border-indigo-300 transition-all group text-left w-full">
+                        <div class="bg-indigo-100 p-2 rounded-lg group-hover:bg-indigo-200 transition-colors">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
+                            </svg>
+                        </div>
+                        <div>
+                            <h4 class="font-bold text-slate-700 text-sm">Partidas con Descompuestos (Justificación de Precios)</h4>
+                            <p class="text-[10px] text-slate-500">Informe detallado con la descomposición completa de cada partida compleja.</p>
+                        </div>
+                    </button>
+                </div>
+
+            </div>
+            
+            <div class="px-6 py-4 bg-slate-50 text-[10px] text-slate-400 text-center uppercase tracking-widest font-bold sticky bottom-0 z-10 border-t">
+                Los listados se abrirán en una nueva pestaña para su impresión
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de Edición -->
+    <div id="edit-modal" class="modal-overlay">
+        <div class="bg-white rounded-xl shadow-2xl w-full max-w-lg overflow-hidden transform transition-all scale-100">
+            <div class="px-6 py-4 bg-slate-50 border-b border-slate-100 flex justify-between items-center">
+                <h3 id="modal-title" class="font-bold text-slate-700">Editar Registro</h3>
+                <button onclick="ui.closeModal()" class="text-slate-400 hover:text-red-500 transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+            
+            <div class="p-6">
+                <!-- Formulario Textos -->
+                <form id="form-text-edit" class="hidden space-y-4">
+                    <div>
+                        <label id="lbl-text-edit" class="block text-xs font-bold text-slate-500 uppercase mb-1">Texto</label>
+                        <textarea id="input-text-edit" rows="5" class="w-full border border-slate-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-blue-500"></textarea>
+                    </div>
+                </form>
+
+                <!-- Formulario Precio -->
+                <form id="form-price" class="hidden space-y-4">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Precio Unitario</label>
+                        <input type="number" step="any" id="input-price" class="w-full border border-slate-300 rounded px-3 py-2 text-lg font-bold text-blue-600 text-right focus:outline-none focus:border-blue-500">
+                    </div>
+                </form>
+
+                <!-- Formulario Descompuesto -->
+                <form id="form-decomp" class="hidden space-y-4">
+                    <input type="hidden" id="decomp-index">
+                    <div class="grid grid-cols-3 gap-4">
+                        <div class="col-span-2">
+                            <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Código Recurso</label>
+                            <input type="text" id="decomp-code" class="w-full bg-slate-50 border border-slate-300 rounded px-3 py-2 text-sm font-mono text-blue-600 focus:outline-none focus:border-blue-500" readonly>
+                        </div>
+                        <div class="col-span-1">
+                            <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Unidad</label>
+                            <input type="text" id="decomp-unit" class="w-full border border-slate-300 rounded px-3 py-2 text-sm text-center focus:outline-none focus:border-blue-500" placeholder="ud, m2...">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Resumen / Descripción</label>
+                        <input type="text" id="decomp-summary" class="w-full border border-slate-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-blue-500 placeholder-slate-300" placeholder="Nombre del concepto">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Tipo de Recurso</label>
+                        <select id="decomp-type" class="w-full border border-slate-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-blue-500">
+                            <option value="0">📄 Sin clasificar / Otros</option>
+                            <option value="1">👷 Mano de obra (h)</option>
+                            <option value="2">🚜 Maquinaria (h)</option>
+                            <option value="3">🧱 Materiales</option>
+                        </select>
+                    </div>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Factor</label>
+                            <input type="number" step="any" id="decomp-factor" class="w-full border border-slate-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-blue-500 text-right">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Rendimiento</label>
+                            <input type="number" step="any" id="decomp-yield" class="w-full border border-slate-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-blue-500 text-right">
+                        </div>
+                    </div>
+                </form>
+
+                <!-- Formulario Mediciones -->
+                <form id="form-meas" class="hidden space-y-4">
+                    <input type="hidden" id="meas-index">
+                    <div class="grid grid-cols-4 gap-4">
+                        <div class="col-span-1">
+                            <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Tipo</label>
+                            <select id="meas-type" class="w-full border border-slate-300 rounded px-2 py-2 text-sm focus:outline-none focus:border-blue-500">
+                                <option value="">Normal</option>
+                                <option value="1">Subtotal Parcial</option>
+                                <option value="2">Subtotal Acumulado</option>
+                                <option value="3">Fórmula</option>
+                            </select>
+                        </div>
+                        <div class="col-span-3">
+                            <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Comentario / Fórmula</label>
+                            <input type="text" id="meas-comment" class="w-full border border-slate-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-blue-500">
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-4 gap-2">
+                        <div>
+                            <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1 text-center">Unidades (N)</label>
+                            <input type="number" step="any" id="meas-u" class="w-full border border-slate-300 rounded px-2 py-2 text-sm text-right focus:outline-none focus:border-blue-500">
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1 text-center">Longitud</label>
+                            <input type="number" step="any" id="meas-l" class="w-full border border-slate-300 rounded px-2 py-2 text-sm text-right focus:outline-none focus:border-blue-500">
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1 text-center">Anchura</label>
+                            <input type="number" step="any" id="meas-w" class="w-full border border-slate-300 rounded px-2 py-2 text-sm text-right focus:outline-none focus:border-blue-500">
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1 text-center">Altura</label>
+                            <input type="number" step="any" id="meas-h" class="w-full border border-slate-300 rounded px-2 py-2 text-sm text-right focus:outline-none focus:border-blue-500">
+                        </div>
+                    </div>
+                </form>
+            </div>
+
+            <div class="px-6 py-4 bg-slate-50 border-t border-slate-100 flex justify-end gap-3">
+                <button id="btn-delete-modal" onclick="ui.deleteEntry()" class="hidden px-4 py-2 text-sm font-medium text-white bg-red-500 hover:bg-red-600 rounded-md shadow-sm transition-colors mr-auto">Eliminar</button>
+                <button onclick="ui.closeModal()" class="px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-200 rounded-md transition-colors">Cancelar</button>
+                <button onclick="ui.saveEdit()" class="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-md shadow-sm transition-colors">Guardar Cambios</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Cabecera -->
+    <header class="bg-slate-900 text-white p-4 shadow-xl flex items-center justify-between h-16 relative z-50">
+        <div class="flex items-center gap-3">
+            <div class="bg-blue-600 p-2 rounded-lg shadow-inner">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                </svg>
+            </div>
+            <div>
+                <h1 class="text-lg font-extrabold tracking-tight text-white">BC3 Pro Analyzer</h1>
+                <p class="text-[10px] text-blue-400 font-bold uppercase tracking-widest">Ingeniería FIEBDC-3</p>
+            </div>
+        </div>
+        
+        <div class="flex items-center gap-3">
+            
+            <!-- Botón Ventana Flotante Listado -->
+            <button onclick="ui.toggleListWindow()" class="flex items-center gap-2 bg-slate-700 hover:bg-slate-600 text-white px-4 py-2 rounded-md transition-colors shadow-lg border border-slate-600 font-medium text-sm mr-2 group">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 group-hover:scale-110 transition-transform text-yellow-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+                Buscar / Listado
+            </button>
+
+            <div class="h-6 w-px bg-slate-700 mx-2"></div>
+
+            <!-- NUEVO: Botón Nuevo Proyecto -->
+            <button onclick="ui.createNewProject()" class="flex items-center gap-2 bg-blue-700 hover:bg-blue-600 text-white px-3 py-2 rounded-md transition-colors shadow font-medium text-xs border border-blue-500" title="Crear proyecto vacío">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                </svg>
+                Nuevo
+            </button>
+
+            <label class="flex items-center gap-2 bg-blue-800 hover:bg-blue-700 px-3 py-2 rounded-md cursor-pointer transition-all shadow border border-blue-500 text-xs font-medium text-white" title="Abrir y reemplazar proyecto actual">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 19a2 2 0 01-2-2V7a2 2 0 012-2h4l2 2h4a2 2 0 012 2v1M5 19h14a2 2 0 002-2v-5a2 2 0 00-2-2H9a2 2 0 00-2 2v5a2 2 0 01-2 2z" />
+                </svg>
+                Abrir
+                <input type="file" id="fileInput" class="hidden" accept=".bc3,.txt">
+            </label>
+
+            <!-- NUEVO: Botón Importar (Fusionar) -->
+            <label class="flex items-center gap-2 bg-slate-600 hover:bg-slate-500 px-3 py-2 rounded-md cursor-pointer transition-all shadow border border-slate-500 text-xs font-medium text-white" title="Importar conceptos sin sobrescribir existentes">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a2 2 0 002 2h12a2 2 0 002-2v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                </svg>
+                Importar
+                <input type="file" id="importInput" class="hidden" accept=".bc3,.txt">
+            </label>
+
+            <div class="h-6 w-px bg-slate-700 mx-2"></div>
+
+            <button onclick="ui.saveFile()" class="text-blue-200 hover:text-white px-2 transition-colors" title="Guardar BC3">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" />
+                </svg>
+            </button>
+
+            <button onclick="reports.openListadosModal()" class="text-purple-300 hover:text-white px-2 transition-colors" title="Listados">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+            </button>
+
+            <button onclick="ui.recalculate()" class="text-emerald-300 hover:text-white px-2 transition-colors group" title="Recalcular">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 group-hover:rotate-180 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                </svg>
+            </button>
+
+        </div>
+    </header>
+
+    <!-- Contenedor Principal -->
+    <main class="p-4 grid grid-cols-12 gap-4 h-[calc(100vh-64px-40px)]">
+        
+        <!-- Panel Izquierdo: Jerarquía (Árbol) -->
+        <aside class="col-span-12 lg:col-span-4 xl:col-span-3 flex flex-col gap-4 overflow-hidden">
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 flex flex-col overflow-hidden h-full">
+                <!-- Ya no hay pestañas aquí, solo título -->
+                <div class="flex items-center justify-between p-3 bg-slate-50 border-b border-slate-200 shrink-0">
+                    <h2 class="text-xs font-black uppercase tracking-widest text-slate-400">Estructura del Proyecto</h2>
+                    <span id="nodes-count" class="bg-blue-100 text-blue-700 text-[9px] px-2 py-0.5 rounded-full font-bold">0</span>
+                </div>
+                <div id="tree-container" class="overflow-auto flex-1 p-3 text-sm scroll-smooth bg-slate-50/30 font-medium">
+                    <div class="flex flex-col items-center justify-center h-full text-slate-400 space-y-4 px-6 text-center">
+                        <p class="text-xs font-medium italic">Seleccione un archivo BC3.</p>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Panel Derecho: Información Detallada -->
+        <section class="col-span-12 lg:col-span-8 xl:col-span-9 flex flex-col gap-4 overflow-hidden">
+            <div id="detail-empty" class="h-full flex flex-col items-center justify-center text-slate-400 bg-slate-50 rounded-2xl border-2 border-dashed border-slate-200">
+                <p class="font-medium text-sm">Seleccione un elemento para comenzar</p>
+            </div>
+
+            <div id="breadcrumb-header" class="bg-white px-5 py-3 border-b border-slate-200 flex justify-between items-center hidden rounded-t-2xl shadow-sm">
+                <div id="breadcrumb-text" class="text-xs text-slate-600 font-medium truncate mr-4"></div>
+                <div class="flex gap-1 shrink-0 bg-slate-100 p-1 rounded-lg">
+                    <button onclick="ui.navigate('prev')" class="p-1.5 rounded-md text-slate-500 hover:bg-white hover:text-blue-600 transition-all"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7" /></svg></button>
+                    <button onclick="ui.navigate('next')" class="p-1.5 rounded-md text-slate-500 hover:bg-white hover:text-blue-600 transition-all"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg></button>
+                    <div class="w-px h-6 bg-slate-300 mx-1"></div>
+                    <button onclick="ui.navigate('up')" class="p-1.5 rounded-md text-slate-500 hover:bg-white hover:text-blue-600 transition-all"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" /></svg></button>
+                    <button onclick="ui.navigate('down')" class="p-1.5 rounded-md text-slate-500 hover:bg-white hover:text-blue-600 transition-all"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" /></svg></button>
+                </div>
+            </div>
+
+            <div id="selection-header" class="bg-white p-5 rounded-b-2xl shadow-sm border border-slate-200 border-l-[6px] border-l-blue-600 transition-all hidden">
+                <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                    <div class="flex-1 overflow-hidden">
+                        <span id="detail-code" class="text-2xl font-black font-mono text-white bg-blue-600 px-4 py-2 rounded-lg uppercase tracking-widest inline-block mb-1 shadow-sm">CÓDIGO</span>
+                        <div class="flex items-center gap-2 group cursor-pointer" onclick="ui.openEditSummary()">
+                            <h2 id="detail-summary" class="text-xl font-extrabold text-slate-800 mt-2 leading-tight truncate">Inicie la carga</h2>
+                        </div>
+                        <div class="flex items-center gap-4 mt-2">
+                            <span id="detail-unit" class="text-xs font-bold text-slate-400 bg-slate-100 px-2 py-0.5 rounded italic">Ud: -</span>
+                            <span id="detail-price" class="text-xs font-bold text-slate-500">P. Unitario: <span class="text-blue-600 font-black">-</span></span>
+                        </div>
+                    </div>
+                    <div class="bg-slate-50 px-6 py-3 rounded-xl border border-slate-100 text-right shrink-0">
+                        <p class="text-[10px] text-slate-400 uppercase font-black tracking-widest">Importe Total (DM)</p>
+                        <p id="detail-total" class="text-3xl font-black text-slate-900 tabular-nums">0,00 €</p>
+                    </div>
+                </div>
+            </div>
+
+            <div id="detail-content" class="flex-1 grid grid-rows-2 gap-4 overflow-hidden hidden">
+                <!-- Tabla Descompuesto -->
+                <div class="bg-white rounded-2xl shadow-sm border border-slate-200 flex flex-col overflow-hidden">
+                    <div class="p-4 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
+                        <h3 class="text-sm font-black text-slate-700 uppercase tracking-tight">Descomposición de Costes</h3>
+                        <button onclick="ui.openAddDecomp()" class="text-slate-400 hover:text-green-600 p-1 rounded hover:bg-slate-100 transition-colors"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" /></svg></button>
+                    </div>
+                    <div class="flex-1 overflow-auto">
+                        <table class="w-full text-sm text-left table-sticky">
+                            <thead class="text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                                <tr>
+                                    <th class="px-6 py-3 border-b bg-slate-50 text-center w-8">#</th>
+                                    <th class="px-6 py-3 border-b bg-slate-50">Código</th>
+                                    <th class="px-6 py-3 border-b bg-slate-50">Descripción</th>
+                                    <th class="px-6 py-3 border-b bg-slate-50 text-center">Ud</th>
+                                    <th class="px-6 py-3 border-b bg-slate-50 text-right">Rend.</th>
+                                    <th class="px-6 py-3 border-b bg-slate-50 text-right">Precio</th>
+                                    <th class="px-6 py-3 border-b bg-slate-50 text-right">Importe</th>
+                                </tr>
+                            </thead>
+                            <tbody id="decomposition-body" class="text-slate-600"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Mediciones y Texto -->
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 overflow-hidden">
+                    <div class="bg-white rounded-2xl shadow-sm border border-slate-200 flex flex-col overflow-hidden">
+                         <div class="p-4 bg-slate-50 border-b border-slate-200 flex justify-between items-center">
+                            <h3 class="text-xs font-black text-slate-500 uppercase tracking-widest">Mediciones (~M)</h3>
+                            <button onclick="ui.openAddMeas()" class="text-slate-400 hover:text-green-600 p-1 rounded hover:bg-slate-100 transition-colors"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" /></svg></button>
+                        </div>
+                        <div id="measurements-content" class="flex-1 overflow-auto p-0 text-[11px]">
+                             <table class="w-full text-left table-sticky meas-table">
+                                <thead class="bg-slate-50 font-bold uppercase text-[9px]">
+                                    <tr>
+                                        <th class="text-center w-8">#</th>
+                                        <th class="w-1/3">Comentario</th>
+                                        <th class="text-center">N</th>
+                                        <th class="text-center">L</th>
+                                        <th class="text-center">A</th>
+                                        <th class="text-center">H</th>
+                                        <th class="text-right bg-blue-50/50">Parcial</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="measurements-body" class="text-slate-600 font-mono text-[10px]"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <div class="bg-white rounded-2xl shadow-sm border border-slate-200 flex flex-col overflow-hidden">
+                         <div class="p-4 bg-slate-50 border-b border-slate-200 flex justify-between items-center">
+                            <h3 class="text-xs font-black text-slate-500 uppercase tracking-widest">Pliego / Texto (~T)</h3>
+                            <button onclick="ui.openEditText()" class="text-slate-400 hover:text-blue-600 p-1 rounded hover:bg-slate-100 transition-colors"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg></button>
+                        </div>
+                        <div id="long-text-content" class="flex-1 overflow-auto p-6 text-sm text-slate-600 leading-relaxed font-medium"></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Barra de Estado Inferior -->
+    <footer class="bg-white border-t border-slate-200 h-10 px-6 flex items-center justify-between text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+        <div class="flex items-center gap-8">
+            <span id="status-version">Formato: -</span>
+            <span id="status-currency">Divisa: -</span>
+        </div>
+        <div class="flex items-center gap-2 text-blue-600">
+            <span class="w-2 h-2 rounded-full bg-blue-500 animate-pulse"></span>
+            Motor BC3 V3.57 - Profesional
+        </div>
+    </footer>
+
+    <!-- Ventana Flotante LISTADO COMPLETO (No Modal) -->
+    <div id="floating-list-window" class="floating-window hidden flex flex-col bg-white rounded-lg shadow-2xl border border-slate-300 w-80 h-96 overflow-hidden">
+        <!-- Cabecera de Arrastre -->
+        <div id="floating-list-header" class="drag-handle bg-slate-800 text-white px-3 py-2 flex items-center justify-between cursor-move select-none">
+            <div class="flex items-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-yellow-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+                <span class="text-xs font-bold uppercase tracking-widest">Buscador / Listado</span>
+            </div>
+            <button onclick="ui.toggleListWindow()" class="text-slate-400 hover:text-white transition-colors">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+            </button>
+        </div>
+        <!-- Contenido de la ventana -->
+        <div class="p-2 bg-slate-50 border-b border-slate-200 shrink-0">
+            <input type="text" id="search-input" placeholder="Buscar..." class="w-full px-3 py-1.5 bg-white border border-slate-300 rounded text-xs font-medium focus:outline-none focus:border-blue-500 transition-all shadow-sm">
+        </div>
+        <div id="list-container" class="overflow-auto flex-1 bg-white">
+            <div class="p-4 text-center text-slate-400 text-xs italic">Cargando datos...</div>
+        </div>
+        <!-- Pie de ventana (Resizer visual simple) -->
+        <div class="h-3 bg-slate-100 border-t border-slate-200 flex justify-center items-center cursor-ns-resize opacity-50">
+            <div class="w-8 h-1 bg-slate-300 rounded-full"></div>
+        </div>
+    </div>
+
+    <!-- Lógica JS -->
+    <script src="app.js"></script>
+    <script src="reports.js"></script>
+</body>
+</html>

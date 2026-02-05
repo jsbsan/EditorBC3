@@ -1,0 +1,142 @@
+0. ~V. REGISTRO TIPO PROPIEDAD Y VERSIÓN.
+	Este registro se utiliza para documentar la procedencia y el formato de los archivos y, cuando exista, se dispondrá al comienzo del primer archivo.
+	~V | [ PROPIEDAD_ARCHIVO ] | VERSION_FORMATO [ \ DDMMAAAA ] | [ PROGRAMA_EMISION ] | [ CABECERA ] \ { ROTULO_IDENTIFICACION \ } | [JUEGO_CARACTERES ] | [ COMENTARIO ] | [ TIPO INFORMACIÓN ] | [ NÚMERO
+	CERTIFICACIÓN ] | [ FECHA CERTIFICACIÓN ] | [ URL_BASE ] |
+	PROPIEDAD_ARCHIVO: Redactor de la base de datos u obra, fecha…
+	VERSION_FORMATO: VERSION del formato del archivo, la actual es FIEBDC-3/2016.
+	DDMMAAAA: DD representa el día con dos dígitos, MM el mes y AAAA el año. Si la fecha tiene 6 o menos dígitos, el año se representará con dos dígitos (AA), interpretándose con el criterio “80/20”. Esto es, cualquier año que sea igual o superior a 80 corresponderá al siglo XX y cualquier año que sea menor de 80 corresponderá al siglo XXI. Si la fecha tiene menos de 5 dígitos representa mes y año únicamente (MMAA), si tiene menos de tres, solo el año (AA). Si se identifica la fecha con un número impar de dígitos, se completará con el carácter cero por la izquierda. Para representar una fecha sin un día o mes específico, se utilizará un doble cero en cada caso.
+	Ejemplos: 
+		12062000	12 de junio de 2000
+		120699		12 de junio de 1999
+		00061281	junio de 1281
+		061281 		6 de diciembre de 1981
+		401 		abril de 2001
+	PROGRAMA_EMISION: Programa y/o empresa que genera los ficheros en formato BC3.
+	CABECERA: Título general de los ROTULOS_IDENTIFICACION.
+	ROTULO_IDENTIFICACION: Asigna secuencialmente títulos a los valores definidos en el campo PRECIO del registro ~C, y los conjuntos de campos de números de decimales del registro ~K, que tal como se indica en su ESPECIFICACION, puede representar distintas épocas, ámbitos geográficos, etc., estableciéndose una relación biunívoca entre ambos.
+	En el caso de que en el registro ~V existan más campos ROTULO_IDENTIFICACION que campos PRECIO en el registro ~C o que conjuntos de campos de decimales en el registro ~K, se entenderá que el PRECIO y los conjuntos de campos de decimales de dicho resto serán iguales al último definido.
+	JUEGO_CARACTERES: Asigna si el juego de caracteres a emplear es el definido para D.O.S., cuyos identificadores serán 850 ó 437, o es el definido para Windows, cuyo identificador será ANSI. En caso de que dicho campo esté vacío se interpretará, por omisión, que el juego de caracteres a utilizar será el 850 por compatibilidad con versiones anteriores.
+	COMENTARIO: Contenido del archivo (base, obra...).
+	TIPO INFORMACIÓN: Índice del tipo de información a intercambiar.
+	Se definen los siguientes tipos:
+	1 Base de datos.
+	2 Presupuesto.
+	3 Certificación (a origen).
+	4 Actualización de base de datos.
+
+
+
+1. ~C. REGISTRO TIPO CONCEPTO.
+------------------------------------
+	Este registro contiene la INFORMACION básica de un concepto de cualquier tipo, material, auxiliar, partida, capítulo, entidad, documento, etc., tanto en su VERSION paramétrica como DEFINICION tradicional.
+	~C | CODIGO { \ CODIGO } | [ UNIDAD ] | [ RESUMEN ] | { PRECIO \ } | { FECHA \ } | [ TIPO ] |
+	CODIGO: CODIGO del concepto descrito. Un concepto puede tener varios CODIGOs que actuarán como sinónimos, este mecanismo permite integrar distintos sistemas de clasificación 
+	Puede tener un máximo de 20 caracteres.
+	Para distinguir el concepto tipo raíz de un archivo, así como los conceptos tipo capítulo, se ampliará su CODIGO con los caracteres '##' y '#' respectivamente; quedando dicha NOTACION reflejada obligatoriamente en el registro tipo ~C, siendo opcional en los restantes registros del mismo concepto.
+	Las referencias a un CODIGO con y sin # y/o ##, se entienden únicas a un mismo concepto.
+	Únicamente puede haber un concepto raíz en una base de datos u obra.
+	Si un código cuenta con un carácter '#' intercalado, se entenderá que corresponde al conjunto CODIGO_ENTIDAD # CODIGO_CONCEPTO definido en el registro de Tipo Relación Comercial (registro ~O) o en la función BdcComercCodigo.
+	UNIDAD: Unidad de medida. Existe una relación de unidades de medida recomendadas, elaborada por la Asociación de Redactores de Bases de Datos de CONSTRUCCION. 
+	RESUMEN: Resumen del texto descriptivo. Cada soporte indicará el número de caracteres que admite en su campo resumen. Se recomienda un máximo de 64 caracteres.
+	PRECIO: Precio del concepto. Un concepto puede tener varios precios alternativos que representen distintas épocas, ámbitos geográficos, etc., definidos biunívocamente respecto al campo [CABECERA \ {ROTULO_IDENTIFICACION\} del registro ~V. Cuando haya más de un precio se asignarán secuencialmente a cada ROTULO definido; si hay más ROTULOS que precios, se asignará a aquellos el último precio definido. En el caso que el concepto posea descomposición, este precio será el resultado de dicha descomposición y se proporcionará, de forma obligatoria, para permitir su comprobación. En caso de discrepancia, tendrá preponderancia el resultado obtenido por la descomposición, tal como se indica en el registro Tipo Descomposición, ~D, y complementariamente se podría informar al usuario de dicha
+	situación. Esto se aplica también a los conceptos tipo capítulo y concepto raíz de una Obra o Presupuesto. Como excepción a esta regla está el intercambio de mediciones no estructuradas (véase la descripción del registro Tipo Mediciones, ~M).
+	FECHA: Fecha de la última actualización del precio. Cuando haya más de una fecha se asignarán secuencialmente a cada precio definido, si hay más precios que fechas, los precios sin su correspondiente fecha tomarán la última fecha definida.
+	Las fechas se definirán en el formato DDMMAAAA: DD representa el día con dos dígitos, MM el mes y AAAA el año. Si la fecha tiene 6 o menos dígitos, el año se representará con dos dígitos (AA), interpretándose con el criterio “80/20”. Esto es, cualquier año que sea igual o superior a 80 corresponderá al siglo XX y cualquier año que sea menor de 80 corresponderá al siglo XXI.
+	Si la fecha tiene menos de 5 dígitos representa mes y año únicamente (MMAA), si tiene menos de tres, solo el año (AA). Si se identifica la fecha con un número impar de dígitos, se completará con el carácter cero por la izquierda. Para representar una fecha sin un día o mes específico, se utilizará un doble cero en cada caso.
+	Ejemplos:
+	12062000 12 de junio de 2000
+	120699 12 de junio de 1999
+	00061281 junio de 1281
+	061281 6 de diciembre de 1981
+	401 abril de 2001
+	TIPO: Tipo de concepto. Inicialmente se reservan los siguientes tipos:
+	0 	Sin clasificar
+	1 	Mano de obra
+	2 	Maquinaria y medios auxiliares
+	3	Materiales
+	4 	Componentes adicionales de residuo
+	5	Clasificación de residuo
+
+2. ~D. REGISTRO TIPO DESCOMPOSICIÓN
+------------------------------------
+	Este registro contiene la descomposición de un concepto en otros a través de una o dos cantidades. El mismo registro lo emplearemos para definir la descomposición de un concepto tipo unidad de obra en conceptos tipo materiales, mano de obra, maquinaria y auxiliares y para la descomposición de un concepto tipo capítulo en conceptos tipo unidad de obra o subcapítulo.
+	Los redactores de un presupuesto, de un banco de precios o el exportador a formato FIEBDC de un programa de presupuestos deben ser conscientes de no aplicar dos veces el concepto de costes indirectos en una misma unidad de obra, ya que el formato permite la posibilidad de disponer los costes indirectos tanto en el registro ~K como en la descomposición de las unidades de obra.
+	Si se define como concepto derivado un concepto que no posee partes variables en su definición (no es un paramétrico) ni es un capítulo, entonces, un concepto derivado sólo puede contener en su descomposición a conceptos derivados.
+	~D | CODIGO_PADRE | < CODIGO_HIJO \ [ FACTOR ] \ [ RENDIMIENTO ] \ > | < CODIGO_HIJO \ [ FACTOR ] \ [ RENDIMIENTO ] \ {CODIGO_PORCENTAJE ; } \ > |
+	Este registro incluye el campo 2 por compatibilidad con versiones anteriores del formato, aunque los programas deben leer el campo 3 por ser más completo y en su defecto el campo 2.
+	CODIGO_PADRE: CODIGO del concepto descompuesto.
+	CODIGO_HIJO: CODIGO de cada concepto que interviene en la descomposición.
+	FACTOR: Factor de rendimiento, por defecto 1.0
+	RENDIMIENTO: Número de unidades, rendimiento o medición, por defecto 1.0
+	Cuando un capítulo interviene en una línea de descomposición, este no se ve afectado ni por el factor ni por el rendimiento. Estos campos se intercambian con el valor por defecto 1.0 en dicha línea de descomposición.
+	Cuando el CODIGO_HIJO incluye el carácter ‘%’ o el carácter ‘&’ es un porcentaje sobre las líneas anteriores de la descomposición. El código de los porcentajes tiene tres partes:
+	1) Prefijo, que forma una máscara indicando sobre qué elementos se aplica el porcentaje. Si el prefijo es nulo, el porcentaje se aplica a todas las líneas anteriores.
+	2) Un carácter, que puede ser ‘&’ (porcentaje acumulable), o ‘%’ (porcentaje no acumulable).
+	3) Una serie de caracteres libres que permite diferenciar un porcentaje de otro.
+
+	Ejemplo: OP%N0001
+		OP: Sobre todas las líneas anteriores cuyo código comience por OP.
+		%: Porcentaje no acumulable
+		N0001: Código diferenciador.
+		El rendimiento será el porcentaje que se aplica sobre las líneas anteriores a la actual y que queden afectadas por la máscara.
+
+	Ejemplo de una línea de descomposición: O%N0001 \\0.03\
+	Esta línea representa un porcentaje del 0.03 por uno (3%) de todas las líneas anteriores a la actual, incluso porcentajes, cuyo código comience por O y cuyo texto estará en la definición del código 'O%N0001'.
+
+	Ejemplo: ~C | O%N0001 | % | Medios auxiliares |
+	A efectos de cálculo de precios compuestos los porcentajes acumulables y no acumulables se comportan de la misma forma. La diferencia entre ellos únicamente se manifiesta en el cálculo de cantidades de simples que hay en un presupuesto, para ello se consideraran los acumulables (‘&’) como porcentajes de perdidas, roturas u otros casos que impliquen una mayor cantidad de los recursos en líneas superiores. Los no acumulables (‘%’) se pueden referir a pequeño material u otros casos que no impliquen una mayor necesidad de recursos en líneas superiores.
+	La existencia del factor en líneas de descomposición y el uso casi nulo que se ha hecho de los porcentajes acumulables (‘&’) hace que éstos se mantengan por razones históricas,pero se desaconseja su uso.
+	CODIGO_PORCENTAJE: CODIGOS de concepto porcentaje que se aplican a esta línea de descomposición. Tiene codificación libre ya que el código no se utiliza para determinar sobre que líneas aplicar el porcentaje separados con el carácter < ; > (ASCII-59). Cuando en un descompuesto aparece explícitamente el código porcentaje en las líneas sobre las que se aplica estas determinarán de forma unívoca la aplicación del porcentaje y será preciso que en el descompuesto aparezca otra línea con el código porcentaje en el campo CODIGO_HIJO. En este caso no se aplican las reglas sobre composición del código de los porcentajes y si las que se usan para el resto de los conceptos. El porcentaje se aplicará a la suma de las líneas que la preceden y que lleven el CODIGO_PORCENTAJE. No puede aparecer un concepto porcentaje en la posición CODIGO_PORCENTAJE después de aparecer en CODIGO_HIJO. Se pueden aplicar más de un concepto porcentaje sobre la misma línea.
+	En el caso que el importe de un concepto se pueda obtener mediante el campo precio del registro ~C y también mediante el registro ~D, será el importe obtenido de este último el que primará sobre el importe del primero
+
+3. ~T. REGISTRO TIPO TEXTO.
+------------------------------------
+	Este registro contiene el texto descriptivo de un concepto
+	~T | CODIGO_CONCEPTO | TEXTO_DESCRIPTIVO |
+	CODIGO_CONCEPTO: CODIGO del concepto descrito
+	TEXTO_DESCRIPTIVO: Texto descriptivo del concepto sin limitación de tamaño. El texto podrá contener caracteres fin de línea (ASCII-13 + ASCII-10) que se mantendrán al reformatearlo
+
+4. ~M. REGISTRO TIPO MEDICIONES.
+------------------------------------
+	En este registro figuran las mediciones (cantidades), en que interviene un concepto de un presupuesto en la descomposición de otro de mayor rango.
+	En el intercambio de archivos de presupuestos, deberá figurar siempre este registro, exista o no desglose de mediciones.
+	Cuando se trate de intercambiar una relación de registros ~M que recogen un listado de mediciones no estructurado, no es necesario la disposición de un CODIGO raíz ni los registros ~D complementarios. El operador indicará en estos casos cual es el destino de la medición.
+	~M | [ CODIGO_PADRE \ ] CODIGO_HIJO | { POSICION \ } | MEDICION_TOTAL | { TIPO \ | COMENTARIO { # ID_BIM } \ UNIDADES \ LONGITUD \ LATITUD \ ALTURA \ } | [ ETIQUETA ]
+	CODIGO_PADRE: CODIGO del concepto padre o concepto descompuesto del presupuesto.
+	CODIGO_HIJO: CODIGO del concepto hijo o concepto de la línea de descomposición.
+	Este campo es opcional en el caso de intercambiar mediciones no estructuradas, es decir, que no pertenecen a la estructura general y completa de un presupuesto
+	POSICION: Posición del CONCEPTO_HIJO en la descomposición del CONCEPTO_PADRE, este dato permite identificar la medición cuando la descomposición del concepto padre incluye varios conceptos hijo con el mismo CODIGO, la numeración de las posiciones comenzará con el 1.
+	El campo POSICION deberá especificarse siempre en intercambio de presupuestos cuando éste sea completo y estructurado, e indicará el camino completo de la medición descrita en la estructura del archivo. Por ejemplo 3 \ 5 \ 2, indicará la medición correspondiente al capítulo 3 del archivo; subcapítulo 5 del capítulo 3; y partida 2 del subcapítulo 5. En mediciones no estructuradas este campo es opcional.
+	MEDICION_TOTAL: Debe coincidir con el rendimiento del registro tipo '~D' correspondiente. Incorpora el sumatorio del producto de unidades, longitud, latitud y altura o el resultado de expresiones de cada línea, al leer este registro se recalculará este valor.
+	TIPO: Indica el tipo de línea de medición de que se trate. Usualmente este subcampo estará vacío. Los tipos establecidos en esta VERSION son:
+		'1' Subtotal parcial: En esta línea aparecerá el subtotal de las líneas anteriores desde el último subtotal hasta la línea inmediatamente anterior a ésta.
+		'2' Subtotal acumulado: En esta línea aparecerá el subtotal de todas las líneas anteriores desde la primera hasta la línea inmediatamente anterior a ésta.
+		'3' Expresión: Indicará que en el subcampo COMENTARIO aparecerá una expresión algebraica a evaluar. Se podrán utilizar los operadores '(', ')', '+', '-', '*', '/' y '^'; las variables 'a', 'b', 'c' y 'd' (que tendrán por valor las cantidades introducidas en los subcampos UNIDADES, LONGITUD, LATITUD y ALTURA respectivamente); y la constante 'p' para el valor Pi=3.1415926. Esta expresión será válida hasta la siguiente línea de medición en la que se defina otra expresión. Solo se evalúa la expresión y no se multiplica por las unidades. 
+	Cuando la medición sea tipo 1 o tipo 2, los subcampos UNIDADES, LONGITUD, LATITUD y ALTURA tienen que estar vacíos. Si hubiera datos en ellos, no se tendrán en cuenta.
+	COMENTARIO: Texto en la línea de medición. Podrá ser un comentario o una expresión algebraica.
+
+4. ~K. REGISTRO TIPO COEFICIENTES.
+------------------------------------
+	Indica el número de decimales en cada campo numérico. Cuando el campo numérico aparece con signo negativo, indica número máximo de decimales. En caso contrario indica número exacto de decimales.
+	Cuando en un archivo FIEBDC aparece una cantidad con más cifras decimales de las correspondientes según el registro ~K, se debe especificar como error, ya que lo que se exporta debe coincidir con el registro ~K.
+	Cuando en un archivo FIEBDC no exista este registro, se recomienda aplicar los decimales por defecto establecidos en el formato.
+	~K | { DN \ DD \ DS \ DR \ DI \ DP \ DC \ DM \ DIVISA \ } | CI \ GG \ BI \ BAJA \ IVA | { DRC \ DC \ \ DFS \ DRS \ \ DUO \ DI \ DES \ DN \ DD \ DS \ DSP \ DEC \ DIVISA \ } | [ n ] |
+	Este registro incluye el campo 1 por compatibilidad con versiones anteriores del formato, aunque los programas deben leer el campo 3 por ser más completo y en su defecto el campo 1.
+
+	Conceptos previos
+	Unidad de obra: Cualquier elemento simple o elemento compuesto, con o sin costes indirectos, que se utiliza en un presupuesto.
+	Elemento compuesto: Todo elemento constructivo que contiene una descomposición y que no es ni raíz ni capitulo.
+	Elemento simple: Todo elemento constructivo que no contiene una descomposición y que no es ni raíz ni capitulo.
+
+	Definiciones 
+	DN Decimales del campo número de partes iguales de la hoja de mediciones. Por defecto 2 decimales.
+	DD Decimales de dimensiones de las tres magnitudes de la hoja de mediciones. Por defecto 2 decimales.
+	DS Decimales de la línea de subtotal o total de mediciones. Por defecto 2 decimales. 
+	DR Decimales de rendimiento y factor en una descomposición. Por defecto 3 decimales.
+	DI Decimales del importe resultante de multiplicar rendimiento x precio del concepto. Por defecto 2 decimales
+	DP Decimales del importe resultante del sumatorio de los costes directos del concepto. Por defecto 2 decimales
+	DC Decimales del importe total del concepto. (CD+CI). Por defecto 2 decimales 
+	DM Decimales del importe resultante de multiplicar la medición total del concepto por su precio. Por defecto 2 decimales
+	DIVISA Es la divisa expresada en el mismo modo que las abreviaturas utilizadas por el BCE (Banco Central Europeo), que en su caso deberán coincidir con las del registro ~V. 
+
+

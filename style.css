@@ -1,0 +1,85 @@
+/* PROYECTO: Visor Profesional FIEBDC-3 (BC3)
+    VERSION: 3.26
+    DESCRIPCION: Hoja de estilos principal con Tailwind CSS y ajustes personalizados.
+*/
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+body {
+    font-family: 'Inter', sans-serif;
+    background-color: #f1f5f9;
+}
+
+/* Estilos de barra de desplazamiento */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: #f1f1f1; }
+::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+
+/* [MEJORA] Aumentamos especificidad para eliminar !important */
+#tree-container .tree-node-selected {
+    background-color: #dbeafe;
+    border-left: 4px solid #2563eb;
+}
+
+#list-container .list-item-selected {
+    background-color: #dbeafe;
+    border-left: 4px solid #2563eb;
+}
+
+.table-sticky thead th {
+    position: sticky;
+    top: 0;
+    background: #f8fafc;
+    z-index: 10;
+}
+
+.loading-overlay {
+    display: none;
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(255,255,255,0.9);
+    z-index: 1000;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Modal Overlay */
+.modal-overlay {
+    display: none;
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(15, 23, 42, 0.6);
+    z-index: 2000;
+    align-items: center;
+    justify-content: center;
+    backdrop-filter: blur(2px);
+}
+.modal-overlay.active { display: flex; }
+
+.chapter-line {
+    border-left: 1px dashed #cbd5e1;
+    margin-left: 0.75rem;
+}
+
+/* Estilos para la tabla de mediciones detallada */
+.meas-table th { font-size: 10px; text-transform: uppercase; color: #64748b; padding: 6px 4px; }
+.meas-table td { padding: 4px 4px; border-bottom: 1px solid #f1f5f9; }
+.meas-table input { width: 100%; background: transparent; border: none; font-family: monospace; text-align: right; }
+
+/* --- NUEVO: Estilos para Ventana Flotante --- */
+.floating-window {
+    position: absolute;
+    top: 80px;
+    right: 20px;
+    z-index: 900; /* Por debajo del modal, pero por encima del contenido */
+    resize: both; /* Permite redimensionar */
+    overflow: auto; /* Necesario para resize */
+    min-width: 250px;
+    min-height: 200px;
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+}
+
+.drag-handle {
+    cursor: move;
+}
