@@ -1,15 +1,15 @@
 <!-- 
     PROYECTO: Visor Profesional FIEBDC-3 (BC3)
-    VERSION: 3.57
+    VERSION: 3.58
     DESCRIPCION: 
-    - [NUEVO] Botones para Crear Nuevo Proyecto e Importar (Fusionar) BC3.
+    - [CORRECCIÓN] Alineación de tabla de mediciones (Añadida columna Tipo/L y headers faltantes).
 -->
 <!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Visor Profesional FIEBDC-3 (BC3) v3.57</title>
+    <title>Visor Profesional FIEBDC-3 (BC3) v3.58</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Estilos Personalizados -->
@@ -450,12 +450,15 @@
                                 <thead class="bg-slate-50 font-bold uppercase text-[9px]">
                                     <tr>
                                         <th class="text-center w-8">#</th>
+                                        <th class="text-center w-8">Tip</th>
                                         <th class="w-1/3">Comentario</th>
                                         <th class="text-center">N</th>
                                         <th class="text-center">L</th>
                                         <th class="text-center">A</th>
                                         <th class="text-center">H</th>
+                                        <th class="text-left bg-blue-50/20">Fórm.</th>
                                         <th class="text-right bg-blue-50/50">Parcial</th>
+                                        <th class="text-right bg-yellow-50/20">Acum.</th>
                                     </tr>
                                 </thead>
                                 <tbody id="measurements-body" class="text-slate-600 font-mono text-[10px]"></tbody>
@@ -482,7 +485,7 @@
         </div>
         <div class="flex items-center gap-2 text-blue-600">
             <span class="w-2 h-2 rounded-full bg-blue-500 animate-pulse"></span>
-            Motor BC3 V3.57 - Profesional
+            Motor BC3 V3.58 - Profesional
         </div>
     </footer>
 

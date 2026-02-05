@@ -1,10 +1,10 @@
 /**
  * PROYECTO: Visor Profesional FIEBDC-3 (BC3)
  * MODULO: Generador de Listados Jerárquicos
- * VERSION: 3.56 (Yield Precision 3 Decimals)
+ * VERSION: 3.61
  * DESCRIPCION: 
- * - [NUEVO] Listados de Recursos Básicos (Mano de Obra, Maquinaria, Materiales).
- * - [MEJORA] Listado de Justificación de Precios ahora usa 3 decimales para Rendimiento.
+ * - [CORRECCIÓN] Saneamiento de HTML en descripciones para evitar errores de renderizado.
+ * - [MEJORA] Estilo visual de la caja de texto descriptivo en Justificación de Precios.
  */
 
 const reports = {
@@ -26,10 +26,22 @@ const reports = {
         return val.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     },
 
-    // [NUEVO] Helper para 3 decimales (Rendimientos)
+    // Helper para 3 decimales (Rendimientos)
     fmtThreeDecimals: (val) => {
         if (val === undefined || val === null || isNaN(val)) return '-';
         return val.toLocaleString('es-ES', { minimumFractionDigits: 3, maximumFractionDigits: 3 });
+    },
+
+    // [NUEVO] Función para escapar caracteres HTML y evitar roturas de código
+    escapeHtml: (text) => {
+        if (!text) return "";
+        return text
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#039;")
+            .replace(/`/g, "&#96;"); // Escapar backticks es crucial para template literals
     },
 
     numberToText: (amount) => {
@@ -235,7 +247,7 @@ const reports = {
                                 <td width="15%" class="${indentClass} font-mono font-bold">${concept.code}</td>
                                 <td width="70%">
                                     <span class="font-bold">${concept.summary}</span>
-                                    ${concept.description ? `<br><span class="text-xs italic">${concept.description.replace(/\n/g, '<br>')}</span>` : ''}
+                                    ${concept.description ? `<br><span class="text-xs italic">${reports.escapeHtml(concept.description).replace(/\n/g, '<br>')}</span>` : ''}
                                 </td>
                                 <td width="15%" class="text-right font-bold bg-white" style="vertical-align: middle;">
                                     ${totalStr ? `<span class="header-total">${totalStr}</span>` : ''}
@@ -368,7 +380,8 @@ const reports = {
             let descExtra = "";
             
             if (!isChapter && concept.description) {
-                descExtra = `<br><span class="text-xs italic" style="color:#666; font-weight:normal;">${concept.description.replace(/\n/g, ' ')}</span>`;
+                // Escapar HTML en la descripción para el presupuesto
+                descExtra = `<br><span class="text-xs italic" style="color:#666; font-weight:normal;">${reports.escapeHtml(concept.description).replace(/\n/g, ' ')}</span>`;
             }
 
             content += `
@@ -496,7 +509,8 @@ const reports = {
             
             let itemText = "";
             if (concept.description) {
-                itemText = `<span style="font-weight:normal;">${concept.description.replace(/\n/g, '<br>')}</span>`;
+                // Escapar HTML en la descripción
+                itemText = `<span style="font-weight:normal;">${reports.escapeHtml(concept.description).replace(/\n/g, '<br>')}</span>`;
             } else {
                 itemText = `<span>${concept.summary}</span>`;
             }
@@ -567,7 +581,7 @@ const reports = {
             const nString = counter.toString().padStart(4, '0');
             
             let itemText = concept.description 
-                ? concept.description.replace(/\n/g, '<br>')
+                ? reports.escapeHtml(concept.description).replace(/\n/g, '<br>')
                 : concept.summary;
 
             let totalMO = 0; 
@@ -710,6 +724,18 @@ const reports = {
         }
 
         complexItems.forEach(parent => {
+             // [CORRECCIÓN] Renderizado seguro con escapeHtml y estilo mejorado
+             let descriptionHtml = '';
+             if (parent.description && parent.description.length > 0) {
+                 const safeText = reports.escapeHtml(parent.description);
+                 descriptionHtml = `
+                    <div style="padding: 12px; background-color: #f8fafc; border-bottom: 1px solid #cbd5e1; color: #000; font-size: 0.85em; font-family: sans-serif; line-height: 1.5; white-space: pre-wrap; font-style: normal;">
+                        <div style="font-weight:bold; font-size:0.8em; color:#64748b; margin-bottom:4px; text-transform:uppercase; letter-spacing:0.5px;">📝 Notas del Proyecto/Pliego:</div>
+                        ${safeText}
+                    </div>
+                 `;
+             }
+
              content += `
                 <div class="no-break" style="margin-top: 20px; border: 1px solid #e2e8f0; padding: 0; border-radius: 4px; overflow:hidden;">
                     <div style="background-color: #f1f5f9; padding: 10px; border-bottom: 1px solid #e2e8f0; display:flex; justify-content:space-between; align-items:center;">
@@ -719,6 +745,9 @@ const reports = {
                         </div>
                         <span style="font-weight:black; font-size:1.1em;">${engine.formatCurrency(parent.price, 'DC')}</span>
                     </div>
+                    
+                    ${descriptionHtml}
+
                     <table style="width:100%; font-size: 0.9em; margin-bottom:0; border:none;">
                         <thead style="background:white;">
                             <tr style="color:#64748b; font-size:0.8em; text-transform:uppercase;">
