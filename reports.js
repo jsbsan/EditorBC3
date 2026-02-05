@@ -1,10 +1,11 @@
 /**
  * PROYECTO: Visor Profesional FIEBDC-3 (BC3)
  * MODULO: Generador de Listados Jerárquicos
- * VERSION: 3.61
+ * VERSION: 3.62
  * DESCRIPCION: 
- * - [CORRECCIÓN] Saneamiento de HTML en descripciones para evitar errores de renderizado.
- * - [MEJORA] Estilo visual de la caja de texto descriptivo en Justificación de Precios.
+ * - [CORRECCIÓN] Visualización de textos largos en Justificación de Precios usando método replace(\n -> br).
+ * - [MEJORA] Función escapeHtml para sanear textos.
+ * - Mantiene formato de 3 decimales para rendimientos.
  */
 
 const reports = {
@@ -35,13 +36,16 @@ const reports = {
     // [NUEVO] Función para escapar caracteres HTML y evitar roturas de código
     escapeHtml: (text) => {
         if (!text) return "";
-        return text
-            .replace(/&/g, "&amp;")
-            .replace(/</g, "&lt;")
-            .replace(/>/g, "&gt;")
-            .replace(/"/g, "&quot;")
-            .replace(/'/g, "&#039;")
-            .replace(/`/g, "&#96;"); // Escapar backticks es crucial para template literals
+        return text.replace(/[&<>"'`]/g, function(m) {
+            return {
+                '&': '&amp;',
+                '<': '&lt;',
+                '>': '&gt;',
+                '"': '&quot;',
+                "'": '&#039;',
+                '`': '&#96;'
+            }[m];
+        });
     },
 
     numberToText: (amount) => {
@@ -724,13 +728,12 @@ const reports = {
         }
 
         complexItems.forEach(parent => {
-             // [CORRECCIÓN] Renderizado seguro con escapeHtml y estilo mejorado
+             // [CORRECCIÓN] Renderizado seguro idéntico a Mediciones (replace \n por <br>)
              let descriptionHtml = '';
-             if (parent.description && parent.description.length > 0) {
-                 const safeText = reports.escapeHtml(parent.description);
+             if (parent.description && parent.description.trim().length > 0) {
+                 const safeText = reports.escapeHtml(parent.description).replace(/\n/g, '<br>');
                  descriptionHtml = `
-                    <div style="padding: 12px; background-color: #f8fafc; border-bottom: 1px solid #cbd5e1; color: #000; font-size: 0.85em; font-family: sans-serif; line-height: 1.5; white-space: pre-wrap; font-style: normal;">
-                        <div style="font-weight:bold; font-size:0.8em; color:#64748b; margin-bottom:4px; text-transform:uppercase; letter-spacing:0.5px;">📝 Notas del Proyecto/Pliego:</div>
+                    <div style="padding: 10px 15px; background-color: #ffffff; border-bottom: 1px solid #cbd5e1; color: #475569; font-size: 0.9em; font-family: sans-serif; font-style: italic; margin-bottom: 5px;">
                         ${safeText}
                     </div>
                  `;
