@@ -454,9 +454,9 @@ class BC3Engine {
         
         // [MODIFICADO] Función general (para mediciones y otros) - USA PUNTO DECIMAL
         const fNum = (n) => (n === undefined || n === null) ? '' : n.toString();
-
-        lines.push(`~V|${this.metadata.owner || ''}|${this.metadata.version}|${this.metadata.software}|`);
-
+        // Modifico linea V para añadir sistema de caracteres ANSI
+        lines.push(`~V|JSBSAN|${this.metadata.version}|BC3 Pro Analyzer||ANSI|`);
+        
         // Sincronizamos metadatos para asegurar que el receptor sepa los decimales
         this.metadata.dr = 3; // Decimales de Rendimiento
         this.metadata.dc = 2; // Decimales de Coste (Precio)
