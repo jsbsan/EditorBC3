@@ -1,9 +1,11 @@
 /**
  * PROYECTO: Visor Profesional FIEBDC-3 (BC3)
- * VERSION: 3.64 (Decimal Point Export)
+ * VERSION: 3.65 (Percentage Calculation Logic)
  * DESCRIPCION: 
- * - [CORRECCIÓN] Exportación utilizando punto decimal en lugar de coma, según solicitud explícita.
- * - Mantiene 3 decimales para rendimientos y 2 para precios.
+ * - [NUEVO] Algoritmo de Doble Pasada para cálculo de Porcentajes.
+ * - [NUEVO] Detección automática de bases imponibles (%MO, %MQ, %MT, %CI, %GG).
+ * - [NUEVO] Inyección dinámica de cantidad calculada (Base/100) en el rendimiento.
+ * - Mantiene compatibilidad con punto decimal.
  */
 
 class BC3Engine {
@@ -217,25 +219,114 @@ class BC3Engine {
         }
     }
 
+    /**
+     * Calcula el precio compuesto de un concepto.
+     * Implementa ALGORITMO DE DOBLE PASADA para porcentajes.
+     */
     calculateConceptPriceRecursively(code, visited) {
         const concept = this.resolveConcept(code);
         if (!concept) return 0;
         const realCode = concept.code;
+        
+        // Evitar ciclos infinitos
         if (visited.has(realCode)) return 0;
         visited.add(realCode);
+
+        // Si es un concepto simple (sin hijos), devolver su precio directo
         if (concept.children.length === 0) {
             visited.delete(realCode);
             return concept.price;
         }
-        let calculatedPrice = 0;
+
+        // --- ALGORITMO DE DOBLE PASADA ---
+        
+        // Separar hijos en Normales y Porcentajes
+        const normalChildren = [];
+        const percentChildren = [];
+
         concept.children.forEach(child => {
-            const childPrice = this.calculateConceptPriceRecursively(child.code, visited);
-            const lineCost = this.round(childPrice * child.factor * child.yield);
-            calculatedPrice += lineCost;
+            if (child.code.includes('%')) {
+                percentChildren.push(child);
+            } else {
+                normalChildren.push(child);
+            }
         });
-        concept.price = this.round(calculatedPrice);
+
+        let totalPrice = 0;
+        
+        // Acumuladores por Naturaleza (Base Imponible)
+        let sumMO = 0; // Tipo 1: Mano de Obra
+        let sumMQ = 0; // Tipo 2: Maquinaria
+        let sumMT = 0; // Tipo 3: Materiales
+        let sumResto = 0; // Tipo 0 u otros
+
+        // PASO 1: Calcular hijos NORMALES y acumular bases
+        normalChildren.forEach(child => {
+            const childPrice = this.calculateConceptPriceRecursively(child.code, visited);
+            
+            // Cálculo estándar: Importe = Precio * Factor * Rendimiento
+            const cantidad = child.factor * child.yield;
+            const lineCost = this.round(childPrice * cantidad);
+            
+            totalPrice += lineCost;
+
+            // Clasificar importe según naturaleza para las bases imponibles
+            const childConcept = this.resolveConcept(child.code);
+            if (childConcept) {
+                const type = childConcept.type;
+                if (type === '1') sumMO += lineCost;
+                else if (type === '2') sumMQ += lineCost;
+                else if (type === '3') sumMT += lineCost;
+                else sumResto += lineCost;
+            } else {
+                sumResto += lineCost;
+            }
+        });
+
+        // PASO 2: Calcular hijos PORCENTAJE
+        // Se aplican sobre los acumulados del Paso 1
+        percentChildren.forEach(child => {
+            // El "Precio" del concepto porcentaje actúa como el valor del porcentaje (ej. 13.00)
+            const percentValue = this.calculateConceptPriceRecursively(child.code, visited);
+            
+            let baseImponible = 0;
+            const uCode = child.code.toUpperCase();
+
+            // Lógica de Selección de Base Imponible
+            if (uCode.includes('%MO')) {
+                baseImponible = sumMO;
+            } else if (uCode.includes('%MQ')) {
+                baseImponible = sumMQ;
+            } else if (uCode.includes('%MT')) {
+                baseImponible = sumMT;
+            } else if (uCode.includes('%CI') || uCode.includes('%GG')) {
+                // Costes Indirectos / Gastos Generales: Sobre el total de Costes Directos acumulados
+                baseImponible = sumMO + sumMQ + sumMT + sumResto;
+            } else {
+                // Por defecto, asumimos aplicación sobre el total de Costes Directos
+                baseImponible = sumMO + sumMQ + sumMT + sumResto;
+            }
+
+            // Actualización de la variable calculada (Cantidad)
+            // Fórmula requerida: Importe = (Precio_Percent * Base) / 100
+            // Para mantener compatibilidad con el cálculo estándar del motor (Precio * Cantidad),
+            // establecemos la Cantidad (Yield) como Base / 100.
+            const cantidadCalculada = baseImponible / 100;
+            
+            // Actualizamos los datos del hijo en memoria para que UI y Exportación sean consistentes
+            child.yield = cantidadCalculada;
+            child.factor = 1;
+
+            // Cálculo del importe con redondeo a 2 decimales
+            const lineCost = this.round(percentValue * cantidadCalculada);
+            totalPrice += lineCost;
+        });
+
+        // PASO 3: Total Final
+        concept.price = this.round(totalPrice);
+        
         visited.delete(realCode);
-        return calculatedPrice;
+        return concept.price;
     }
 
     async parse(content) {
@@ -1709,6 +1800,10 @@ document.addEventListener('DOMContentLoaded', () => {
             reader.onload = async (res) => {
                 try {
                     await engine.parse(res.target.result);
+                    
+                    // [MEJORA] Recalcular proyecto automáticamente tras la carga
+                    engine.recalculateProject();
+
                     renderAll();
                     if (!document.getElementById('floating-list-window').classList.contains('hidden')) {
                         renderList();

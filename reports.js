@@ -1,11 +1,12 @@
 /**
  * PROYECTO: Visor Profesional FIEBDC-3 (BC3)
  * MODULO: Generador de Listados Jerárquicos
- * VERSION: 3.62
+ * VERSION: 3.64
  * DESCRIPCION: 
- * - [CORRECCIÓN] Visualización de textos largos en Justificación de Precios usando método replace(\n -> br).
+ * - [CAMBIO] Renombrado título de reporte "Justificación de Precios" a "Descompuestos".
+ * - [MEJORA] Añadida columna "Precio" en el listado de Descompuestos.
+ * - [CORRECCIÓN] Visualización de textos largos usando replace(\n -> br).
  * - [MEJORA] Función escapeHtml para sanear textos.
- * - Mantiene formato de 3 decimales para rendimientos.
  */
 
 const reports = {
@@ -714,7 +715,7 @@ const reports = {
 
     // --- LISTADO DE DESCOMPUESTOS (JUSTIFICACIÓN DE PRECIOS) ---
     generateDecompositionReport: () => {
-        let content = `<h1>Justificación de Precios</h1>`;
+        let content = `<h1>Descompuestos</h1>`; // [CAMBIO] Título cambiado de "Justificación de Precios" a "Descompuestos"
         content += `<div class="meta">PROYECTO: ${engine.rootCode} | DIVISA: ${engine.metadata.currency}</div>`;
         
         // Filtramos partidas complejas que NO sean capítulos (normalmente los capítulos acaban en #)
@@ -755,9 +756,10 @@ const reports = {
                         <thead style="background:white;">
                             <tr style="color:#64748b; font-size:0.8em; text-transform:uppercase;">
                                 <th width="15%" style="border-bottom:1px solid #eee;">Código</th>
-                                <th width="50%" style="border-bottom:1px solid #eee;">Descripción Recurso</th>
+                                <th width="40%" style="border-bottom:1px solid #eee;">Descripción Recurso</th>
                                 <th width="10%" class="text-center" style="border-bottom:1px solid #eee;">Ud</th>
                                 <th width="10%" class="text-right" style="border-bottom:1px solid #eee;">Rend.</th>
+                                <th width="10%" class="text-right" style="border-bottom:1px solid #eee;">Precio</th>
                                 <th width="15%" class="text-right" style="border-bottom:1px solid #eee;">Importe</th>
                             </tr>
                         </thead>
@@ -777,6 +779,7 @@ const reports = {
                         <td class="text-xs" style="border-bottom:1px dashed #f1f5f9;">${childConcept ? childConcept.summary : '<span style="color:red">No encontrado</span>'}</td>
                         <td class="text-center text-xs" style="border-bottom:1px dashed #f1f5f9; color:#94a3b8;">${childConcept ? childConcept.unit : ''}</td>
                         <td class="text-right text-xs" style="border-bottom:1px dashed #f1f5f9;">${reports.fmtThreeDecimals(quantity)}</td>
+                        <td class="text-right text-xs" style="border-bottom:1px dashed #f1f5f9;">${engine.formatCurrency(unitPrice, 'DC')}</td>
                         <td class="text-right text-xs" style="border-bottom:1px dashed #f1f5f9;">${engine.formatCurrency(cost, 'DI')}</td>
                     </tr>
                 `;
@@ -785,6 +788,6 @@ const reports = {
             content += `</tbody></table></div>`;
         });
 
-        reports.printHTML(content, "Justificación de Precios");
+        reports.printHTML(content, "Descompuestos"); // [CAMBIO] Título de ventana de impresión actualizado a "Descompuestos"
     }
 };
