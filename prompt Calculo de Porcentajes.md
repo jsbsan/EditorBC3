@@ -49,3 +49,9 @@ Para que el punto 4 funcione, el sistema debe saber qué es cada línea.
 Prompt: recalculo cuando abra
 ---
 Mejora: despues de abrir un  fichero bc3,  debe de recalcularlo
+
+
+---
+Prompt: exportación de precio y no de rendimiento en lineas %
+---
+Mejora: al exportar el BC3, en la linea de Descompuesto, si el concepto hijo tiene en su código un porcentaje pon el precio dividido entre 100

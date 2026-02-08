@@ -1,10 +1,9 @@
 /**
  * PROYECTO: Visor Profesional FIEBDC-3 (BC3)
- * VERSION: 3.65 (Percentage Calculation Logic)
+ * VERSION: 3.66 (Export Percentage Fix)
  * DESCRIPCION: 
- * - [NUEVO] Algoritmo de Doble Pasada para cálculo de Porcentajes.
- * - [NUEVO] Detección automática de bases imponibles (%MO, %MQ, %MT, %CI, %GG).
- * - [NUEVO] Inyección dinámica de cantidad calculada (Base/100) en el rendimiento.
+ * - [MODIFICADO] En exportación BC3, los conceptos con '%' en el código exportan (Precio/100) en el campo rendimiento.
+ * - Mantiene Algoritmo de Doble Pasada para cálculo interno.
  * - Mantiene compatibilidad con punto decimal.
  */
 
@@ -568,7 +567,15 @@ class BC3Engine {
                 let dLine = `~D|${c.code}|`;
                 const childParts = [];
                 c.children.forEach(child => {
-                    childParts.push(`${child.code}\\${fNumYield(child.factor)}\\${fNumYield(child.yield)}`);
+                    let exportYield = child.yield;
+                    // [NUEVO] Si es porcentaje, exportar (Precio / 100) en lugar del rendimiento calculado
+                    if (child.code.includes('%')) {
+                        const childC = this.resolveConcept(child.code);
+                        if (childC) {
+                            exportYield = childC.price / 100;
+                        }
+                    }
+                    childParts.push(`${child.code}\\${fNumYield(child.factor)}\\${fNumYield(exportYield)}`);
                 });
                 dLine += childParts.join('\\') + '|';
                 lines.push(dLine);
