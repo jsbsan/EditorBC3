@@ -11,3 +11,17 @@ prompt: listado de auxiliares
 Mejora: Nuevo Listado "Partidas de Precios Auxiliares".  Estas partidas tienen descompuestos pero  no cuelgan en el arbol de jerarquia de un capitulo o subcapitulo solo son hijos de otros descompuestos. Muestra el listado de estas partidas de la misma forma que se hace con el listado de "Descompuestos".
 
 Modifica el listado de "Descompuestos" para que no aparezcan partidas auxiliares
+
+
+----
+prompt: listado de necesidades
+----
+Mejora: Nuevo listado "Listado de Necesidades". En este listado se listan:
+- Columna 1º: los conceptos elementales (primero los del tipo de mano de obra, luego los del tipo de materiales, luego los del tipo de maquinaria, y finalmente los del tipo otros).
+- Columna 2º: precio del concepto elemental.
+- Columna 3º:  total de unidades necesarias (calculadas según el rendimiento por las mediciones de las partidas  presupuestos donde esten presentes).
+- Columna 4º: con el calculo del precio por total de unidades calculadas.
+
+
+
+

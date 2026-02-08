@@ -1,15 +1,16 @@
 <!-- 
     PROYECTO: Visor Profesional FIEBDC-3 (BC3)
-    VERSION: 3.58
+    VERSION: 3.59
     DESCRIPCION: 
-    - [CORRECCIÓN] Alineación de tabla de mediciones (Añadida columna Tipo/L y headers faltantes).
+    - [MEJORA] Añadido botón "Necesidades" (Listado de Necesidades).
+    - [CORRECCIÓN] Alineación de tabla de mediciones.
 -->
 <!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Visor Profesional FIEBDC-3 (BC3) v3.58</title>
+    <title>Visor Profesional FIEBDC-3 (BC3) v3.59</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Estilos Personalizados -->
@@ -110,7 +111,7 @@
 
                 <!-- Sección 2: Listados de Recursos Básicos -->
                 <h4 class="text-xs font-black text-slate-400 uppercase tracking-widest mb-4 border-b pb-2">Listados de Recursos Básicos</h4>
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
                     <!-- Mano de Obra -->
                     <button onclick="reports.generateLaborReport()" class="flex items-center gap-3 p-3 border border-slate-200 rounded-xl hover:bg-orange-50 hover:border-orange-300 transition-all group text-left">
                         <div class="bg-orange-100 p-2 rounded-full group-hover:bg-orange-200 transition-colors">
@@ -141,6 +142,17 @@
                         <div>
                             <h4 class="font-bold text-slate-700 text-sm">Materiales</h4>
                             <p class="text-[10px] text-slate-500">Listado simple.</p>
+                        </div>
+                    </button>
+
+                    <!-- Necesidades [NUEVO] -->
+                    <button onclick="reports.generateNeedsReport()" class="flex items-center gap-3 p-3 border border-slate-200 rounded-xl hover:bg-cyan-50 hover:border-cyan-300 transition-all group text-left">
+                        <div class="bg-cyan-100 p-2 rounded-full group-hover:bg-cyan-200 transition-colors">
+                            <span class="text-lg">📋</span>
+                        </div>
+                        <div>
+                            <h4 class="font-bold text-slate-700 text-sm">Necesidades</h4>
+                            <p class="text-[10px] text-slate-500">Recursos totales.</p>
                         </div>
                     </button>
                 </div>

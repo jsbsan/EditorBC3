@@ -1,14 +1,11 @@
 /**
  * PROYECTO: Visor Profesional FIEBDC-3 (BC3)
  * MODULO: Generador de Listados Jerárquicos
- * VERSION: 3.66
+ * VERSION: 3.72
  * DESCRIPCION: 
- * - [MEJORA] Listado de "Descompuestos" filtra partidas auxiliares (solo muestra jerarquía principal).
- * - [NUEVO] Listado de "Partidas de Precios Auxiliares".
- * - [CAMBIO] Renombrado título de reporte "Justificación de Precios" a "Descompuestos".
- * - [MEJORA] Añadida columna "Precio" en el listado de Descompuestos.
- * - [CORRECCIÓN] Visualización de textos largos usando replace(\n -> br).
- * - [MEJORA] Función escapeHtml para sanear textos.
+ * - [MEJORA] Listado "Necesidades": Explosión completa de insumos. No lista auxiliares, sino sus componentes básicos.
+ * - [MEJORA] Listado de "Descompuestos" filtra partidas auxiliares.
+ * - [MEJORA] Subtotales por naturaleza y Total General incluidos.
  */
 
 const reports = {
@@ -714,6 +711,154 @@ const reports = {
     generateLaborReport: () => reports.generateBasicResourceReport('1', 'Mano de Obra'),
     generateMachineryReport: () => reports.generateBasicResourceReport('2', 'Maquinaria'),
     generateMaterialsReport: () => reports.generateBasicResourceReport('3', 'Materiales'),
+
+    // --- LISTADO DE NECESIDADES [MODIFICADO: Sin Auxiliares] ---
+    generateNeedsReport: () => {
+        let content = `<h1>Listado de Necesidades</h1>`;
+        content += `<div class="meta">PROYECTO: ${engine.rootCode} | DIVISA: ${engine.metadata.currency}</div>`;
+
+        // Map para agregar cantidades: code -> { concept, totalQty: 0 }
+        const needsMap = new Map();
+
+        // Recursión unificada desde la raíz
+        const calculateNeedsRecursively = (code, qtyMultiplier, visited) => {
+            const concept = engine.resolveConcept(code);
+            if (!concept) return;
+
+            // Evitar ciclos infinitos
+            if (visited.has(code)) return;
+
+            const hasChildren = concept.children && concept.children.length > 0;
+
+            // CONDICIÓN DE PARADA Y ACUMULACIÓN:
+            // 1. Si es elemental (sin hijos) se acumula.
+            // 2. Si tiene hijos (Auxiliar o Partida), se ignora y se profundiza.
+            if (!hasChildren) {
+                if (!needsMap.has(code)) {
+                    needsMap.set(code, { 
+                        concept: concept, 
+                        totalQty: 0 
+                    });
+                }
+                const entry = needsMap.get(code);
+                entry.totalQty += qtyMultiplier;
+                return; // Es hoja, retornamos
+            }
+
+            // Si llegamos aquí, es un contenedor, partida o auxiliar. Explotamos hijos.
+            const newVisited = new Set(visited);
+            newVisited.add(code);
+
+            concept.children.forEach(child => {
+                // child.yield contiene medición o rendimiento
+                const childTotalQty = qtyMultiplier * child.factor * child.yield;
+                calculateNeedsRecursively(child.code, childTotalQty, newVisited);
+            });
+        };
+
+        if (engine.rootCode) {
+            // Iniciamos con 1 unidad del proyecto raíz
+            calculateNeedsRecursively(engine.rootCode, 1, new Set());
+        }
+
+        // Convertir a Array y Filtrar ceros
+        const list = Array.from(needsMap.values()).filter(item => Math.abs(item.totalQty) > 0.0001);
+
+        // Ordenar: 1 (MO) -> 3 (MT) -> 2 (MQ) -> Otros
+        const typeOrder = { '1': 1, '3': 2, '2': 3 };
+        const getOrder = (type) => typeOrder[type] || 4;
+
+        list.sort((a, b) => {
+            const orderA = getOrder(a.concept.type);
+            const orderB = getOrder(b.concept.type);
+            if (orderA !== orderB) return orderA - orderB;
+            return a.concept.code.localeCompare(b.concept.code);
+        });
+
+        // Generar Tabla HTML
+        content += `
+            <table>
+                <thead>
+                    <tr>
+                        <th width="12%">Código</th>
+                        <th width="40%">Descripción</th>
+                        <th width="8%" class="text-center">Tipo</th>
+                        <th width="13%" class="text-right">Precio Unit.</th>
+                        <th width="12%" class="text-right">Total Ud.</th>
+                        <th width="15%" class="text-right">Importe Total</th>
+                    </tr>
+                </thead>
+                <tbody>
+        `;
+
+        let currentTypeGroup = -1;
+        let groupSubtotal = 0; 
+        let grandTotal = 0;    
+        const typeNames = { 1: 'Mano de Obra', 3: 'Materiales', 2: 'Maquinaria', 4: 'Otros' };
+
+        list.forEach(item => {
+            const orderGroup = getOrder(item.concept.type);
+            const totalCost = item.totalQty * item.concept.price;
+            
+            // Cambio de grupo
+            if (orderGroup !== currentTypeGroup) {
+                // Si había un grupo previo, imprimimos su subtotal
+                if (currentTypeGroup !== -1) {
+                     content += `
+                        <tr style="background-color: #f1f5f9; font-weight: bold; font-size: 10px; border-top: 1px solid #cbd5e1;">
+                            <td colspan="5" class="text-right" style="padding: 6px 8px; text-transform: uppercase; color: #475569;">Subtotal ${typeNames[currentTypeGroup]}:</td>
+                            <td class="text-right" style="padding: 6px 8px; color: #1e3a8a;">${engine.formatCurrency(groupSubtotal, 'DI')}</td>
+                        </tr>
+                    `;
+                    grandTotal += groupSubtotal;
+                    groupSubtotal = 0;
+                }
+
+                currentTypeGroup = orderGroup;
+                content += `
+                    <tr style="background-color: #e2e8f0; font-weight: bold; text-transform: uppercase; font-size: 10px;">
+                        <td colspan="6" style="padding: 6px 8px; border-top: 2px solid #cbd5e1; color: #334155;">${typeNames[orderGroup]}</td>
+                    </tr>
+                `;
+            }
+
+            // Acumular
+            groupSubtotal += totalCost;
+
+            content += `
+                <tr>
+                    <td class="font-mono text-xs">${item.concept.code}</td>
+                    <td class="text-xs">${item.concept.summary}</td>
+                    <td class="text-center text-xs text-slate-400">${item.concept.type}</td>
+                    <td class="text-right text-xs">${engine.formatCurrency(item.concept.price, 'DC')}</td>
+                    <td class="text-right text-xs font-bold">${reports.fmtThreeDecimals(item.totalQty)} ${item.concept.unit}</td>
+                    <td class="text-right text-xs font-black">${engine.formatCurrency(totalCost, 'DI')}</td>
+                </tr>
+            `;
+        });
+
+        // Imprimir el subtotal del último grupo
+        if (currentTypeGroup !== -1) {
+             content += `
+                <tr style="background-color: #f1f5f9; font-weight: bold; font-size: 10px; border-top: 1px solid #cbd5e1;">
+                    <td colspan="5" class="text-right" style="padding: 6px 8px; text-transform: uppercase; color: #475569;">Subtotal ${typeNames[currentTypeGroup]}:</td>
+                    <td class="text-right" style="padding: 6px 8px; color: #1e3a8a;">${engine.formatCurrency(groupSubtotal, 'DI')}</td>
+                </tr>
+            `;
+            grandTotal += groupSubtotal;
+        }
+
+        // Fila Total General
+        content += `
+            <tr style="background-color: #1e3a8a; color: white; font-weight: bold; font-size: 12px; border-top: 3px double white;">
+                <td colspan="5" class="text-right" style="padding: 10px; text-transform: uppercase;">TOTAL NECESIDADES DE OBRA:</td>
+                <td class="text-right" style="padding: 10px;">${engine.formatCurrency(grandTotal, 'DI')}</td>
+            </tr>
+        `;
+
+        content += `</tbody></table>`;
+        reports.printHTML(content, "Necesidades del Proyecto");
+    },
 
     // --- LISTADO DE AUXILIARES [NUEVO] ---
     generateAuxiliaryReport: () => {
