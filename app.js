@@ -1,11 +1,12 @@
 /**
  * PROYECTO: Visor Profesional FIEBDC-3 (BC3)
- * VERSION: 3.67 (Final Integration)
+ * VERSION: 3.68 (Fix Chapter Display)
  * DESCRIPCION: 
  * - Algoritmo de Doble Pasada para cálculo de Porcentajes.
  * - Exportación con corrección de rendimientos para porcentajes (Precio/100).
  * - Recálculo automático al cargar proyecto.
  * - Checkbox para creación rápida de capítulos.
+ * - [CORRECCIÓN] Visualización de códigos con '#' en tabla de descompuestos.
  * - Mantiene compatibilidad con punto decimal.
  */
 
@@ -1676,7 +1677,7 @@ function selectNode(code, parentPath) {
                         </button>
                     </td>
                     <td class="px-6 py-3 font-mono text-[10px] text-blue-600 font-bold">
-                        <span class="mr-1 text-sm">${typeIcon}</span>${child.code}
+                        <span class="mr-1 text-sm">${typeIcon}</span>${cData.code || child.code}
                     </td>
                     <td class="px-6 py-3 text-slate-700">${cData.summary}</td>
                     <td class="px-6 py-3 text-center text-slate-400 font-bold">${cData.unit || '-'}</td>

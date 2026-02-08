@@ -1,8 +1,10 @@
 /**
  * PROYECTO: Visor Profesional FIEBDC-3 (BC3)
  * MODULO: Generador de Listados Jerárquicos
- * VERSION: 3.64
+ * VERSION: 3.66
  * DESCRIPCION: 
+ * - [MEJORA] Listado de "Descompuestos" filtra partidas auxiliares (solo muestra jerarquía principal).
+ * - [NUEVO] Listado de "Partidas de Precios Auxiliares".
  * - [CAMBIO] Renombrado título de reporte "Justificación de Precios" a "Descompuestos".
  * - [MEJORA] Añadida columna "Precio" en el listado de Descompuestos.
  * - [CORRECCIÓN] Visualización de textos largos usando replace(\n -> br).
@@ -713,19 +715,131 @@ const reports = {
     generateMachineryReport: () => reports.generateBasicResourceReport('2', 'Maquinaria'),
     generateMaterialsReport: () => reports.generateBasicResourceReport('3', 'Materiales'),
 
+    // --- LISTADO DE AUXILIARES [NUEVO] ---
+    generateAuxiliaryReport: () => {
+        let content = `<h1>Partidas de Precios Auxiliares</h1>`;
+        content += `<div class="meta">PROYECTO: ${engine.rootCode} | DIVISA: ${engine.metadata.currency}</div>`;
+
+        // 1. Identificar elementos que cuelgan directamente del árbol principal (Raíz o Capítulos)
+        const hierarchyMemberCodes = new Set();
+        
+        for (const [code, concept] of engine.db) {
+            // Se considera contenedor si termina en '#' (Capítulo/Subcapítulo/Raíz)
+            if (code.endsWith('#')) {
+                concept.children.forEach(child => {
+                    // Guardamos el código exacto de la referencia del hijo
+                    hierarchyMemberCodes.add(child.code);
+                });
+            }
+        }
+
+        // 2. Filtrar Auxiliares: Compuestos, No contenedores, No hijos directos de contenedores
+        const auxiliaryItems = Array.from(engine.db.values())
+            .filter(c => {
+                const isContainer = c.code.endsWith('#'); 
+                const hasChildren = c.children && c.children.length > 0;
+                // Verificamos si este código aparece como hijo directo de algún capítulo
+                // Nota: Usamos el código tal cual está en la DB
+                const isDirectHierarchy = hierarchyMemberCodes.has(c.code);
+
+                return hasChildren && !isContainer && !isDirectHierarchy;
+            })
+            .sort((a, b) => a.code.localeCompare(b.code));
+
+        if (auxiliaryItems.length === 0) {
+             content += `<p class="text-center italic" style="padding:20px;">No se encontraron partidas auxiliares.</p>`;
+        } else {
+            // 3. Renderizar (Reutilizando estilo de Descompuestos)
+            auxiliaryItems.forEach(parent => {
+                 let descriptionHtml = '';
+                 if (parent.description && parent.description.trim().length > 0) {
+                     const safeText = reports.escapeHtml(parent.description).replace(/\n/g, '<br>');
+                     descriptionHtml = `
+                        <div style="padding: 10px 15px; background-color: #ffffff; border-bottom: 1px solid #cbd5e1; color: #475569; font-size: 0.9em; font-family: sans-serif; font-style: italic; margin-bottom: 5px;">
+                            ${safeText}
+                        </div>
+                     `;
+                 }
+    
+                 content += `
+                    <div class="no-break" style="margin-top: 20px; border: 1px solid #e2e8f0; padding: 0; border-radius: 4px; overflow:hidden;">
+                        <div style="background-color: #f1f5f9; padding: 10px; border-bottom: 1px solid #e2e8f0; display:flex; justify-content:space-between; align-items:center;">
+                            <div>
+                                <span style="color:#1e40af; font-weight:bold; font-family:monospace; font-size:1.1em; margin-right:10px;">${parent.code}</span>
+                                <span style="font-weight:bold;">${parent.summary}</span>
+                            </div>
+                            <span style="font-weight:black; font-size:1.1em;">${engine.formatCurrency(parent.price, 'DC')}</span>
+                        </div>
+                        
+                        ${descriptionHtml}
+    
+                        <table style="width:100%; font-size: 0.9em; margin-bottom:0; border:none;">
+                            <thead style="background:white;">
+                                <tr style="color:#64748b; font-size:0.8em; text-transform:uppercase;">
+                                    <th width="15%" style="border-bottom:1px solid #eee;">Código</th>
+                                    <th width="40%" style="border-bottom:1px solid #eee;">Descripción Recurso</th>
+                                    <th width="10%" class="text-center" style="border-bottom:1px solid #eee;">Ud</th>
+                                    <th width="10%" class="text-right" style="border-bottom:1px solid #eee;">Rend.</th>
+                                    <th width="10%" class="text-right" style="border-bottom:1px solid #eee;">Precio</th>
+                                    <th width="15%" class="text-right" style="border-bottom:1px solid #eee;">Importe</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                `;
+                
+                parent.children.forEach(child => {
+                    const childConcept = engine.resolveConcept(child.code);
+                    const quantity = child.factor * child.yield;
+                    const unitPrice = childConcept ? childConcept.price : 0;
+                    const cost = quantity * unitPrice;
+                    
+                    content += `
+                        <tr>
+                            <td class="font-mono text-xs" style="border-bottom:1px dashed #f1f5f9;">${childConcept ? childConcept.code : child.code}</td>
+                            <td class="text-xs" style="border-bottom:1px dashed #f1f5f9;">${childConcept ? childConcept.summary : '<span style="color:red">No encontrado</span>'}</td>
+                            <td class="text-center text-xs" style="border-bottom:1px dashed #f1f5f9; color:#94a3b8;">${childConcept ? childConcept.unit : ''}</td>
+                            <td class="text-right text-xs" style="border-bottom:1px dashed #f1f5f9;">${reports.fmtThreeDecimals(quantity)}</td>
+                            <td class="text-right text-xs" style="border-bottom:1px dashed #f1f5f9;">${engine.formatCurrency(unitPrice, 'DC')}</td>
+                            <td class="text-right text-xs" style="border-bottom:1px dashed #f1f5f9;">${engine.formatCurrency(cost, 'DI')}</td>
+                        </tr>
+                    `;
+                });
+                
+                content += `</tbody></table></div>`;
+            });
+        }
+
+        reports.printHTML(content, "Precios Auxiliares");
+    },
+
     // --- LISTADO DE DESCOMPUESTOS (JUSTIFICACIÓN DE PRECIOS) ---
     generateDecompositionReport: () => {
         let content = `<h1>Descompuestos</h1>`; // [CAMBIO] Título cambiado de "Justificación de Precios" a "Descompuestos"
         content += `<div class="meta">PROYECTO: ${engine.rootCode} | DIVISA: ${engine.metadata.currency}</div>`;
         
-        // Filtramos partidas complejas que NO sean capítulos (normalmente los capítulos acaban en #)
-        // y que tengan hijos.
+        // 1. Identificar qué conceptos cuelgan directamente de capítulos (Jerarquía Principal)
+        const hierarchyMemberCodes = new Set();
+        for (const [code, concept] of engine.db) {
+            if (code.endsWith('#')) { // Es un contenedor (Capítulo o Raíz)
+                concept.children.forEach(child => {
+                    hierarchyMemberCodes.add(child.code);
+                });
+            }
+        }
+
+        // 2. Filtrar: Complejos + No Capítulos + QUE ESTÉN en la jerarquía principal
         const complexItems = Array.from(engine.db.values())
-            .filter(c => c.children.length > 0 && !c.code.endsWith('#'))
+            .filter(c => {
+                const isContainer = c.code.endsWith('#');
+                const hasChildren = c.children && c.children.length > 0;
+                const isDirectHierarchy = hierarchyMemberCodes.has(c.code);
+                
+                return hasChildren && !isContainer && isDirectHierarchy;
+            })
             .sort((a, b) => a.code.localeCompare(b.code));
 
         if (complexItems.length === 0) {
-             content += `<p class="text-center italic">No se encontraron partidas con descomposición.</p>`;
+             content += `<p class="text-center italic">No se encontraron partidas con descomposición en la estructura principal.</p>`;
         }
 
         complexItems.forEach(parent => {
@@ -775,7 +889,7 @@ const reports = {
                 
                 content += `
                     <tr>
-                        <td class="font-mono text-xs" style="border-bottom:1px dashed #f1f5f9;">${child.code}</td>
+                        <td class="font-mono text-xs" style="border-bottom:1px dashed #f1f5f9;">${childConcept ? childConcept.code : child.code}</td>
                         <td class="text-xs" style="border-bottom:1px dashed #f1f5f9;">${childConcept ? childConcept.summary : '<span style="color:red">No encontrado</span>'}</td>
                         <td class="text-center text-xs" style="border-bottom:1px dashed #f1f5f9; color:#94a3b8;">${childConcept ? childConcept.unit : ''}</td>
                         <td class="text-right text-xs" style="border-bottom:1px dashed #f1f5f9;">${reports.fmtThreeDecimals(quantity)}</td>
