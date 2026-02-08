@@ -1,9 +1,11 @@
 /**
  * PROYECTO: Visor Profesional FIEBDC-3 (BC3)
- * VERSION: 3.66 (Export Percentage Fix)
+ * VERSION: 3.67 (Final Integration)
  * DESCRIPCION: 
- * - [MODIFICADO] En exportación BC3, los conceptos con '%' en el código exportan (Precio/100) en el campo rendimiento.
- * - Mantiene Algoritmo de Doble Pasada para cálculo interno.
+ * - Algoritmo de Doble Pasada para cálculo de Porcentajes.
+ * - Exportación con corrección de rendimientos para porcentajes (Precio/100).
+ * - Recálculo automático al cargar proyecto.
+ * - Checkbox para creación rápida de capítulos.
  * - Mantiene compatibilidad con punto decimal.
  */
 
@@ -929,6 +931,13 @@ const ui = {
             codeInput.classList.remove('bg-white', 'text-slate-700');
         }
 
+        // [NUEVO] Sincronizar estado del checkbox en edición y desactivarlo
+        const chkChapter = document.getElementById('decomp-is-chapter');
+        if(chkChapter) {
+            chkChapter.checked = child.code.endsWith('#');
+            chkChapter.disabled = true; // [CAMBIO] Desactivar checkbox en modo edición
+        }
+
         const cData = engine.resolveConcept(child.code);
         
         const summaryInput = document.getElementById('decomp-summary');
@@ -981,6 +990,13 @@ const ui = {
             codeInput.classList.remove('bg-slate-50', 'text-blue-600'); 
             codeInput.classList.add('bg-white', 'text-slate-700'); 
             codeInput.value = "";
+        }
+
+        // [NUEVO] Resetear checkbox al abrir formulario de añadir y activarlo
+        const chkChapter = document.getElementById('decomp-is-chapter');
+        if(chkChapter) {
+            chkChapter.checked = false;
+            chkChapter.disabled = false; // [CAMBIO] Activar checkbox en modo añadir
         }
 
         const summaryInput = document.getElementById('decomp-summary');
@@ -1235,10 +1251,18 @@ const ui = {
 
         } else if (ui.editingMode === 'decomp_add') {
              if (!ui.currentNode) return;
-             const codeVal = document.getElementById('decomp-code').value.trim();
+             let codeVal = document.getElementById('decomp-code').value.trim();
              const summaryVal = document.getElementById('decomp-summary').value.trim();
              const unitVal = document.getElementById('decomp-unit').value.trim();
              const typeVal = document.getElementById('decomp-type').value;
+             
+             // [NUEVO] Lógica para añadir '#' si el checkbox está marcado
+             const chkChapter = document.getElementById('decomp-is-chapter');
+             if (chkChapter && chkChapter.checked) {
+                 if (codeVal && !codeVal.endsWith('#')) {
+                     codeVal += '#';
+                 }
+             }
              
              if(codeVal) {
                  if (!engine.db.has(codeVal)) {
