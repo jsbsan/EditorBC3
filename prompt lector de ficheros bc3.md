@@ -212,3 +212,109 @@ prompt-> bc3 desde 0.00
 -------
 Añade la opción de crear un bc3 desde cero, pidiendo el nombre del proyecto/obra (el que será elemento ##).
 Añade tambien otra opción de cargar un fichero bc3 solo los conceptos y sus descompuestos y añadirlo a lo que tengamos ya definidos. Si hay elementos con el mismo código no se cargarán.
+
+
+-----------------------------------------------------------------------------------------------------
+## PORCENTAJES
+-----------------------------------------------------------------------------------------------------
+
+--------
+PROMPT:
+--------
+Voy a subir varios archivos de un proyecto web (HTML, CSS y JavaScript). Por ahora, solo quiero que los proceses y los mantengas en tu memoria de contexto. No realices ningún cambio, no reescribas el código ni propongas mejoras todavía.
+
+Confíame que has recibido y comprendido el código haciendo un breve resumen de la estructura del proyecto. Una vez hecho esto, esperaré a que yo te haga preguntas específicas o te pida optimizaciones. ¿Entendido?
+
+
+-------
+Resumen técnico estructurado para entregárselo a tu programador. Está enfocado en la **lógica de negocio** y la **manipulación de datos** necesaria para replicar el comportamiento de BC3.
+------
+
+### Especificación Funcional: Cálculo de Porcentajes en Presupuestos 
+
+#### 1. Detección del Concepto (Parsing)
+*Si la unidad contiene "%", tratar como porcentaje calculado.*
+
+#### 2. Mapeo de Variables (La inversión de roles)
+En una línea de presupuesto estándar (`Cantidad x Precio = Importe`), los roles cambian cuando es un porcentaje:
+* **Input `Cantidad` (Factor en BC3):** No lo introduce el usuario. Es una **variable calculada** automáticamente por el programa.
+* **Input `Precio`:** Almacena el valor del porcentaje.
+* **Output `Importe`:** El resultado monetario real.
+* *Fórmula:* `Importe = (Precio_Calculado * Cantidad_Input) / 100`
+
+#### 3. Algoritmo de "Doble Pasada" (Orden de ejecución)
+No se puede calcular el factor de una partida en un solo ciclo `forEach`.
+* **Paso 1 (Sumatorio):** Recorrer todos los hijos que **NO** son porcentajes (Materiales, Mano de obra, Maquinaria). Calcular sus importes y sumarlos acumulándolos por "Naturaleza" (Tipo).
+* **Paso 2 (Cálculo %):** Recorrer las líneas que **SÍ** son porcentajes. Aplicar el % sobre la suma acumulada en el Paso 1.
+* **Paso 3 (Total):** Sumar el resultado del Paso 1 + Paso 2 para obtener el factor total de la partida.
+
+#### 4. Lógica de la "Base Imponible"
+El programador debe implementar un `switch` o `if/else` para decidir sobre qué se aplica el porcentaje:
+* **Caso `%MO` (MANO DE OBRA):** Se aplica **exclusivamente** sobre la suma de los conceptos tipo 1 (MANO DE OBRA).
+* **Caso `%MQ` (MAQUINARIA):** Se aplica **exclusivamente** sobre la suma de los conceptos tipo 2 (MAQUINARIA).
+* **Caso `%MT` (MATERIALES):** Se aplica **exclusivamente** sobre la suma de los conceptos tipo 3 (MATERIALES).
+* **Caso `%CI` ó `%GG` (Costos Indirectos):** Se aplica sobre la suma **total** de los costes directos (Mano de Obra + Materiales + Maquinaria) del descompuesto.
+
+
+#### 5. Gestión de "Naturalezas" (Tipos de Insumo)
+Para que el punto 4 funcione, el sistema debe saber qué es cada línea.
+* **En BC3:** Leer el registro `~T` (Tipos). 
+
+#### 6. Precisión y Redondeo (Floating Point)
+* **Regla:** Cada multiplicación (`Cantidad x Precio`) debe redondearse a **2 decimales** inmediatamente antes de sumarse al total.
+* *Función sugerida:* `Math.round((valor + Number.EPSILON) * 100) / 100`.
+
+
+---
+Prompt: recalculo cuando abra
+---
+Mejora: despues de abrir un  fichero bc3,  debe de recalcularlo
+
+
+---
+Prompt: exportación de precio y no de rendimiento en lineas %
+---
+Mejora: al exportar el BC3, en la linea de Descompuesto, si el concepto hijo tiene en su código un porcentaje pon el precio dividido entre 100
+
+-----------------------------------------------------------------------------------------------------
+## LISTADO AUXILIARES
+-----------------------------------------------------------------------------------------------------
+-----
+prompt: asignar capitulo
+-----
+- En el formulario de "Añadir Descompuesto" añade una casilla de verificación sin marcar con el texto "¿es un capítulo?". Cuando guarde los cambios, si la casilla de verificación esta marcada y si el código del recurso no termina en el caracter "#", añade al código de recurso el caracter "#"
+- En el formulario de "Editar descompuesto" el checkbox tiene que estar desactivado
+- ¿por que no se muestran los caracter "#" al leer un fichero bc3 en la columna de codigo en "Descomposición de costes"? (NO CAMBIES EL CÓDIGO, SOLO CONTESTA)
+
+----
+prompt: listado de auxiliares
+----
+Mejora: Nuevo Listado "Partidas de Precios Auxiliares".  Estas partidas tienen descompuestos pero  no cuelgan en el arbol de jerarquia de un capitulo o subcapitulo solo son hijos de otros descompuestos. Muestra el listado de estas partidas de la misma forma que se hace con el listado de "Descompuestos".
+
+Modifica el listado de "Descompuestos" para que no aparezcan partidas auxiliares
+
+
+----
+prompt: listado de necesidades
+----
+Mejora: Nuevo listado "Listado de Necesidades". En este listado se listan:
+- Columna 1º: los conceptos elementales (primero los del tipo de mano de obra, luego los del tipo de materiales, luego los del tipo de maquinaria, y finalmente los del tipo otros).
+- Columna 2º: precio del concepto elemental.
+- Columna 3º:  total de unidades necesarias (calculadas según el rendimiento por las mediciones de las partidas  presupuestos donde esten presentes).
+- Columna 4º: con el calculo del precio por total de unidades calculadas.
+
+-----
+prompt: **en preparacion listados solo de auxiliares.**
+-----
+Voy a subir varios archivos de un proyecto web (HTML, CSS y JavaScript). Por ahora, solo quiero que los proceses y los mantengas en tu memoria de contexto. No realices ningún cambio, no reescribas el código ni propongas mejoras todavía.
+
+Confírmame que has recibido y comprendido el código haciendo un breve resumen de la estructura del proyecto. Una vez hecho esto, esperaré a que yo te haga preguntas específicas o te pida optimizaciones. ¿Entendido?
+
+- Haz un nuevo listado llamado "Listado de Necesidades Partidas Auxiliares", donde muestres el total de las mediciones de partidas auxiliares necesarias.
+
+- Haz un nuevo listado llamado "Resumen por Capitulos", donde muestres los capitulos y subcapitulos con su valoración y suma final.
+
+
+
+
+

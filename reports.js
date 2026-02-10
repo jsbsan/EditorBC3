@@ -1,11 +1,13 @@
 /**
  * PROYECTO: Visor Profesional FIEBDC-3 (BC3)
  * MODULO: Generador de Listados Jerárquicos
- * VERSION: 3.72
+ * VERSION: 3.74
  * DESCRIPCION: 
  * - [MEJORA] Listado "Necesidades": Explosión completa de insumos. No lista auxiliares, sino sus componentes básicos.
  * - [MEJORA] Listado de "Descompuestos" filtra partidas auxiliares.
  * - [MEJORA] Subtotales por naturaleza y Total General incluidos.
+ * - [NUEVO] Listado de "Necesidades de Partidas Auxiliares".
+ * - [NUEVO] Listado "Resumen por Capítulos".
  */
 
 const reports = {
@@ -424,7 +426,7 @@ const reports = {
 
     // REPORTE 3: RESUMEN CAPÍTULOS
     generateChapterSummaryReport: () => {
-        let content = `<h1>Resumen de Capítulos</h1>`;
+        let content = `<h1>Resumen por Capítulos</h1>`;
         content += `<div class="meta">PROYECTO: ${engine.rootCode} | DIVISA: ${engine.metadata.currency}</div>`;
         
         content += `
@@ -483,7 +485,7 @@ const reports = {
             `;
         }
 
-        reports.printHTML(content, "Resumen de Capítulos");
+        reports.printHTML(content, "Resumen por Capítulos");
     },
 
     // REPORTE 4: CUADRO DE PRECIOS Nº 1
@@ -858,6 +860,127 @@ const reports = {
 
         content += `</tbody></table>`;
         reports.printHTML(content, "Necesidades del Proyecto");
+    },
+
+    // --- LISTADO DE NECESIDADES DE AUXILIARES [NUEVO] ---
+    generateAuxiliaryNeedsReport: () => {
+        let content = `<h1>Necesidades de Partidas Auxiliares</h1>`;
+        content += `<div class="meta">PROYECTO: ${engine.rootCode} | DIVISA: ${engine.metadata.currency}</div>`;
+
+        // 1. Identificar elementos de la jerarquía principal (para excluir Unitarios de Obra)
+        const hierarchyMemberCodes = new Set();
+        // Incluir el root
+        if(engine.rootCode) hierarchyMemberCodes.add(engine.rootCode);
+        
+        for (const [code, concept] of engine.db) {
+            if (code.endsWith('#')) { // Capítulos o Raíz
+                concept.children.forEach(child => {
+                    hierarchyMemberCodes.add(child.code);
+                });
+            }
+        }
+
+        // 2. Calcular Necesidades Totales (Explosión)
+        const totalsMap = new Map(); // Code -> TotalQty
+
+        const traverse = (code, qtyMultiplier, stack) => {
+            if (stack.has(code)) return; // Evitar ciclos
+            
+            // Acumular cantidad
+            const currentTotal = totalsMap.get(code) || 0;
+            totalsMap.set(code, currentTotal + qtyMultiplier);
+
+            const concept = engine.resolveConcept(code);
+            if (!concept) return;
+
+            // Si tiene hijos, bajar
+            if (concept.children && concept.children.length > 0) {
+                const newStack = new Set(stack);
+                newStack.add(code);
+                
+                concept.children.forEach(child => {
+                    const childQty = qtyMultiplier * child.factor * child.yield;
+                    traverse(child.code, childQty, newStack);
+                });
+            }
+        };
+
+        if (engine.rootCode) {
+            // Empezamos traversal, pero ojo:
+            // No queremos contar el root en el mapa de auxiliares, pero sí necesitamos atravesarlo.
+            // traverse acumula todo. Luego filtraremos.
+            traverse(engine.rootCode, 1, new Set());
+        }
+
+        // 3. Filtrar: Solo Auxiliares
+        // Definición Auxiliar: Tiene Hijos + NO es Capítulo (#) + NO es Jerarquía Directa
+        const list = [];
+        
+        for (const [code, totalQty] of totalsMap) {
+            if (Math.abs(totalQty) < 0.0001) continue;
+
+            const concept = engine.resolveConcept(code);
+            if (!concept) continue;
+
+            const isContainer = code.endsWith('#');
+            const hasChildren = concept.children && concept.children.length > 0;
+            const isDirectHierarchy = hierarchyMemberCodes.has(code);
+            const isRoot = (code === engine.rootCode);
+
+            if (hasChildren && !isContainer && !isDirectHierarchy && !isRoot) {
+                list.push({ concept, totalQty });
+            }
+        }
+
+        // 4. Ordenar y Generar HTML
+        list.sort((a, b) => a.concept.code.localeCompare(b.concept.code));
+
+        if (list.length === 0) {
+            content += `<p class="text-center italic" style="padding:20px;">No se encontraron partidas auxiliares necesarias.</p>`;
+        } else {
+             content += `
+                <table>
+                    <thead>
+                        <tr>
+                            <th width="15%">Código</th>
+                            <th width="55%">Descripción</th>
+                            <th width="10%" class="text-center">Ud</th>
+                            <th width="10%" class="text-right">Precio</th>
+                            <th width="10%" class="text-right">Cantidad Total</th>
+                            <th width="15%" class="text-right">Importe Total</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+
+            let grandTotal = 0;
+
+            list.forEach(item => {
+                const totalCost = item.totalQty * item.concept.price;
+                grandTotal += totalCost;
+
+                content += `
+                    <tr>
+                        <td class="font-mono text-xs font-bold">${item.concept.code}</td>
+                        <td class="text-xs">${item.concept.summary}</td>
+                        <td class="text-center text-xs text-slate-500">${item.concept.unit}</td>
+                        <td class="text-right text-xs">${engine.formatCurrency(item.concept.price, 'DC')}</td>
+                        <td class="text-right text-xs font-bold bg-yellow-50">${reports.fmtThreeDecimals(item.totalQty)}</td>
+                        <td class="text-right text-xs font-black">${engine.formatCurrency(totalCost, 'DI')}</td>
+                    </tr>
+                `;
+            });
+
+            content += `
+                    <tr style="background-color: #1e3a8a; color: white; font-weight: bold; font-size: 12px; border-top: 3px double white;">
+                        <td colspan="5" class="text-right" style="padding: 10px; text-transform: uppercase;">IMPORTE TOTAL AUXILIARES:</td>
+                        <td class="text-right" style="padding: 10px;">${engine.formatCurrency(grandTotal, 'DI')}</td>
+                    </tr>
+                </tbody></table>
+            `;
+        }
+        
+        reports.printHTML(content, "Necesidades de Auxiliares");
     },
 
     // --- LISTADO DE AUXILIARES [NUEVO] ---

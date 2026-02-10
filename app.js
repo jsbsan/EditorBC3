@@ -140,7 +140,8 @@ class BC3Engine {
     }
 
     round(num) {
-        return Math.round((num + Number.EPSILON) * 100) / 100;
+       // [MODIFICADO] Opción B: Aumentar margen de error para redondeo aritmético (Half Up)
+        return Math.round((num + 0.0001) * 100) / 100;
     }
 
     normalizeCode(code) {
