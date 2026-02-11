@@ -1,13 +1,11 @@
 /**
  * PROYECTO: Visor Profesional FIEBDC-3 (BC3)
- * VERSION: 3.68 (Fix Chapter Display)
+ * VERSION: 3.71 (Clipboard Features)
  * DESCRIPCION: 
- * - Algoritmo de Doble Pasada para cálculo de Porcentajes.
- * - Exportación con corrección de rendimientos para porcentajes (Precio/100).
- * - Recálculo automático al cargar proyecto.
- * - Checkbox para creación rápida de capítulos.
- * - [CORRECCIÓN] Visualización de códigos con '#' en tabla de descompuestos.
- * - Mantiene compatibilidad con punto decimal.
+ * - [VISUAL] Formato numérico estricto en UI: Coma decimal y Punto de millares (es-ES).
+ * - [NUEVO] Botón en listado de búsqueda para añadir concepto a la partida actual.
+ * - [MEJORA] Lógica de asignación rápida de recursos.
+ * - [NUEVO] Funciones de copiado al portapapeles para tablas y texto.
  */
 
 class BC3Engine {
@@ -511,7 +509,12 @@ class BC3Engine {
     num(val, type) {
         const dec = this.metadata[type.toLowerCase()] || 2;
         if (isNaN(val)) return '-';
-        return val.toLocaleString('es-ES', { minimumFractionDigits: dec, maximumFractionDigits: dec });
+        // [MODIFICADO] Forzar agrupación de miles (punto) y decimales (coma)
+        return val.toLocaleString('es-ES', { 
+            minimumFractionDigits: dec, 
+            maximumFractionDigits: dec, 
+            useGrouping: true 
+        });
     }
 
     formatCurrency(val, type = 'DC') {
@@ -764,33 +767,40 @@ const ui = {
         URL.revokeObjectURL(url);
     },
     
-    copyDecomposition: () => { /* Logic omitted for brevity, assuming existing logic */ 
+    copyDecomposition: () => { 
         const tbody = document.getElementById('decomposition-body');
         if (!tbody) return;
         let text = "Código\tDescripción\tUd\tRendimiento\tPrecio\tImporte\n";
         for (let row of tbody.rows) {
-            if (row.cells.length <= 1) continue; 
-            const cells = Array.from(row.cells).slice(1).map(c => c.innerText);
-            text += cells.join("\t") + "\n";
+            // Check that row has enough cells. First cell is button, so we skip it.
+            // But we need to make sure we don't pick up empty rows.
+            if (row.cells.length > 1) { 
+                const cells = Array.from(row.cells).slice(1).map(c => c.innerText.trim());
+                text += cells.join("\t") + "\n";
+            }
         }
         ui.copyToClipboard(text, 'btn-copy-decomp');
     },
+    
     copyMeasurements: () => { 
         const tbody = document.getElementById('measurements-body');
         if (!tbody) return;
         let text = "Tipo\tFase\tComentario\tN\tLongitud\tAnchura\tAltura\tFórmula\tParcial\tSubtotal\n";
         for (let row of tbody.rows) {
-             if (row.cells.length <= 1) continue;
-             const cells = Array.from(row.cells).slice(1).map(c => c.innerText.trim());
-             text += cells.join("\t") + "\n";
+             if (row.cells.length > 1) {
+                 const cells = Array.from(row.cells).slice(1).map(c => c.innerText.trim());
+                 text += cells.join("\t") + "\n";
+             }
         }
         ui.copyToClipboard(text, 'btn-copy-meas');
     },
+    
     copyText: () => { 
         const content = document.getElementById('long-text-content');
         if (!content) return;
         ui.copyToClipboard(content.innerText, 'btn-copy-text');
     },
+    
     copyToClipboard: async (text, btnId) => {
         if (navigator.clipboard && navigator.clipboard.writeText) {
             try {
@@ -1348,6 +1358,35 @@ const ui = {
         if (['decomp', 'decomp_add', 'meas', 'price', 'meas_add'].includes(ui.editingMode)) {
                 ui.recalculate(); 
         }
+    },
+
+    // [NUEVO] Función para añadir el concepto seleccionado como hijo de la partida actual
+    addConceptToCurrentNode: (childCode) => {
+        if (!ui.currentNode) {
+            ui.showToast("Seleccione primero una partida destino en el árbol.");
+            return;
+        }
+        
+        // Evitar auto-referencia
+        if (ui.currentNode.code === childCode) {
+            ui.showToast("No puedes añadir una partida a sí misma.");
+            return;
+        }
+
+        // Crear la relación hijo
+        const newChild = {
+            code: childCode,
+            factor: 1,
+            yield: 1
+        };
+        
+        // Añadir al modelo
+        ui.currentNode.children.push(newChild);
+        engine.parentMap.set(engine.normalizeCode(childCode), ui.currentNode.code);
+
+        // Feedback y Recálculo
+        ui.recalculate(); // Esto ya refresca la vista
+        ui.showToast(`Añadido ${childCode} a ${ui.currentNode.code}`);
     }
 };
 
@@ -1381,21 +1420,44 @@ function renderList(filterText = '') {
             continue;
         }
         const div = document.createElement('div');
-        div.className = "flex flex-col p-2 border-b border-slate-100 hover:bg-blue-50 cursor-pointer transition-colors";
+        // [MODIFICADO] Añadida clase 'group' y 'relative' para manejar el hover del botón
+        div.className = "flex flex-col p-2 border-b border-slate-100 hover:bg-blue-50 cursor-pointer transition-colors relative group";
         div.title = "Click: Copiar Código | Doble Click: Ver Detalle";
+        
         div.innerHTML = `
             <div class="flex justify-between items-baseline mb-1">
                 <span class="font-mono text-[10px] font-bold text-blue-600 bg-blue-50 px-1 rounded">${concept.code}</span>
-                <span class="text-[10px] text-slate-400">${concept.unit || '-'}</span>
+                <div class="flex items-center gap-2">
+                    <span class="text-[10px] text-slate-400">${concept.unit || '-'}</span>
+                    <!-- [NUEVO] Botón de Añadir Rápido (visible solo en hover) -->
+                    <button class="btn-add-to-decomp bg-green-100 hover:bg-green-200 text-green-700 p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity" title="Añadir a la partida actual">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                        </svg>
+                    </button>
+                </div>
             </div>
             <div class="text-xs text-slate-700 font-medium truncate">${concept.summary}</div>
             <div class="text-[10px] text-slate-400 text-right mt-1 font-mono">${engine.formatCurrency(concept.price, 'DC')}</div>
         `;
         
+        // Manejador del botón Añadir
+        const btnAdd = div.querySelector('.btn-add-to-decomp');
+        if (btnAdd) {
+            btnAdd.onclick = (e) => {
+                e.stopPropagation(); // Evitar que se dispare el click del div (copiar)
+                ui.addConceptToCurrentNode(code);
+            };
+        }
+
         let clickTimer = null;
 
         // Lógica Click (Copiar) vs Doble Click (Navegar)
-        div.onclick = () => {
+        div.onclick = (e) => {
+            // Si el click fue en el botón, ya se manejó con stopPropagation, esto no debería ejecutarse si burbujea correctamente, 
+            // pero por seguridad verificamos target.
+            if(e.target.closest('.btn-add-to-decomp')) return;
+
             if (clickTimer) {
                 clearTimeout(clickTimer);
                 clickTimer = null;
@@ -1416,7 +1478,9 @@ function renderList(filterText = '') {
             }
         };
 
-        div.ondblclick = () => {
+        div.ondblclick = (e) => {
+             if(e.target.closest('.btn-add-to-decomp')) return;
+
             if (clickTimer) {
                 clearTimeout(clickTimer);
                 clickTimer = null;

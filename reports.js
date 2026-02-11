@@ -1,13 +1,14 @@
 /**
  * PROYECTO: Visor Profesional FIEBDC-3 (BC3)
  * MODULO: Generador de Listados Jerárquicos
- * VERSION: 3.74
+ * VERSION: 3.78
  * DESCRIPCION: 
  * - [MEJORA] Listado "Necesidades": Explosión completa de insumos. No lista auxiliares, sino sus componentes básicos.
  * - [MEJORA] Listado de "Descompuestos" filtra partidas auxiliares.
  * - [MEJORA] Subtotales por naturaleza y Total General incluidos.
  * - [NUEVO] Listado de "Necesidades de Partidas Auxiliares".
- * - [NUEVO] Listado "Resumen por Capítulos".
+ * - [MEJORA] Filtrado robusto del nodo raíz en "Resumen por Capítulos" y "Presupuesto General" usando engine.rootCode.
+ * - [VISUAL] Normalización estricta de formatos numéricos: Coma decimal y Punto de millares (es-ES).
  */
 
 const reports = {
@@ -24,18 +25,35 @@ const reports = {
         document.getElementById('modal-reports').classList.remove('active');
     },
 
+    // [NUEVO] Formateador numérico estricto (Coma decimal, Punto millares)
+    format: (val, type = 'DC') => {
+        if (val === undefined || val === null || isNaN(val)) return '-';
+        // Obtener decimales según el tipo de metadato del motor (dn, dd, ds, dr, di, dp, dc, dm)
+        const decimals = engine.metadata[type.toLowerCase()] || 2;
+        return val.toLocaleString('es-ES', { 
+            minimumFractionDigits: decimals, 
+            maximumFractionDigits: decimals,
+            useGrouping: true // Forzar punto de miles
+        });
+    },
+
+    // [NUEVO] Formateador de moneda estricto
+    formatCurrency: (val, type = 'DC') => {
+        return reports.format(val, type) + ' ' + engine.metadata.currency;
+    },
+
+    // Helpers específicos (Mantenidos pero asegurando es-ES)
     fmtTwoDecimals: (val) => {
         if (val === undefined || val === null || isNaN(val)) return '-';
-        return val.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        return val.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2, useGrouping: true });
     },
 
-    // Helper para 3 decimales (Rendimientos)
     fmtThreeDecimals: (val) => {
         if (val === undefined || val === null || isNaN(val)) return '-';
-        return val.toLocaleString('es-ES', { minimumFractionDigits: 3, maximumFractionDigits: 3 });
+        return val.toLocaleString('es-ES', { minimumFractionDigits: 3, maximumFractionDigits: 3, useGrouping: true });
     },
 
-    // [NUEVO] Función para escapar caracteres HTML y evitar roturas de código
+    // Función para escapar caracteres HTML y evitar roturas de código
     escapeHtml: (text) => {
         if (!text) return "";
         return text.replace(/[&<>"'`]/g, function(m) {
@@ -304,10 +322,10 @@ const reports = {
                             <tr>
                                 <td>${m.type}</td>
                                 <td>${m.comment}</td>
-                                <td class="text-center">${m.units !== 0 ? engine.num(m.units, 'DN') : ''}</td>
-                                <td class="text-center">${m.length !== 0 ? engine.num(m.length, 'DD') : ''}</td>
-                                <td class="text-center">${m.width !== 0 ? engine.num(m.width, 'DD') : ''}</td>
-                                <td class="text-center">${m.height !== 0 ? engine.num(m.height, 'DD') : ''}</td>
+                                <td class="text-center">${m.units !== 0 ? reports.format(m.units, 'DN') : ''}</td>
+                                <td class="text-center">${m.length !== 0 ? reports.format(m.length, 'DD') : ''}</td>
+                                <td class="text-center">${m.width !== 0 ? reports.format(m.width, 'DD') : ''}</td>
+                                <td class="text-center">${m.height !== 0 ? reports.format(m.height, 'DD') : ''}</td>
                                 <td class="text-right">${reports.fmtTwoDecimals(parcial)}</td>
                             </tr>
                         `;
@@ -363,6 +381,9 @@ const reports = {
         `;
 
         const processNode = (concept, parentCode, level, isChapter) => {
+            // [MODIFICADO] Excluir raíz del listado (ya sea ## o el root detectado)
+            if (concept.code === engine.rootCode) return;
+
             const indentClass = `indent-${Math.min(level, 5)}`;
             let cantidad = 0;
             let importe = 0;
@@ -398,9 +419,9 @@ const reports = {
                         ${descExtra}
                     </td>
                     <td class="text-center text-xs">${concept.unit || ''}</td>
-                    <td class="text-right ${fontClass}">${engine.num(cantidad, 'DN')}</td>
-                    <td class="text-right">${engine.num(concept.price, 'DC')}</td>
-                    <td class="text-right font-bold">${engine.num(importe, 'DI')}</td>
+                    <td class="text-right ${fontClass}">${reports.format(cantidad, 'DN')}</td>
+                    <td class="text-right">${reports.format(concept.price, 'DC')}</td>
+                    <td class="text-right font-bold">${reports.format(importe, 'DI')}</td>
                 </tr>
             `;
         };
@@ -414,7 +435,7 @@ const reports = {
                 <tfoot>
                     <tr style="background-color: #1e3a8a; color: white;">
                         <td colspan="5" class="text-right" style="padding: 10px; font-size:12px;">TOTAL PRESUPUESTO DE EJECUCIÓN MATERIAL:</td>
-                        <td class="text-right" style="padding: 10px; font-size:12px; font-weight:bold;">${engine.formatCurrency(rootConcept.price, 'DI')}</td>
+                        <td class="text-right" style="padding: 10px; font-size:12px; font-weight:bold;">${reports.formatCurrency(rootConcept.price, 'DI')}</td>
                     </tr>
                 </tfoot>
             </table>
@@ -443,6 +464,9 @@ const reports = {
 
         const processNode = (concept, parentCode, level, isChapter) => {
             if (!isChapter) return;
+            
+            // [MODIFICADO] Excluir raíz del listado
+            if (concept.code === engine.rootCode) return;
 
             const indentClass = `indent-${Math.min(level, 5)}`;
             let cantidad = 0;
@@ -464,7 +488,7 @@ const reports = {
                 <tr class="chapter-row">
                     <td class="font-mono font-bold ${indentClass}">${concept.code}</td>
                     <td class="font-bold">${concept.summary}</td>
-                    <td class="text-right font-bold">${engine.num(importe, 'DI')}</td>
+                    <td class="text-right font-bold">${reports.format(importe, 'DI')}</td>
                 </tr>
             `;
         };
@@ -478,7 +502,7 @@ const reports = {
                 <tfoot>
                     <tr style="background-color: #1e3a8a; color: white;">
                         <td colspan="2" class="text-right" style="padding: 10px; font-size:12px;">TOTAL PRESUPUESTO DE EJECUCIÓN MATERIAL:</td>
-                        <td class="text-right" style="padding: 10px; font-size:12px; font-weight:bold;">${engine.formatCurrency(rootConcept.price, 'DI')}</td>
+                        <td class="text-right" style="padding: 10px; font-size:12px; font-weight:bold;">${reports.formatCurrency(rootConcept.price, 'DI')}</td>
                     </tr>
                 </tfoot>
             </table>
@@ -532,7 +556,7 @@ const reports = {
                         <span class="price-letter">Asciende el precio unitario a la expresada cantidad de ${priceText}</span>
                     </td>
                     <td class="text-right" style="vertical-align:top; padding-top:8px;">
-                        <span class="price-number">${engine.formatCurrency(concept.price, 'DC')}</span>
+                        <span class="price-number">${reports.formatCurrency(concept.price, 'DC')}</span>
                     </td>
                 </tr>
             `;
@@ -700,7 +724,7 @@ const reports = {
                 <tr>
                     <td class="font-mono font-bold">${res.code}</td>
                     <td>${res.summary}</td>
-                    <td class="text-right font-bold">${engine.formatCurrency(res.price, 'DC')}</td>
+                    <td class="text-right font-bold">${reports.formatCurrency(res.price, 'DC')}</td>
                 </tr>
             `;
         });
@@ -809,7 +833,7 @@ const reports = {
                      content += `
                         <tr style="background-color: #f1f5f9; font-weight: bold; font-size: 10px; border-top: 1px solid #cbd5e1;">
                             <td colspan="5" class="text-right" style="padding: 6px 8px; text-transform: uppercase; color: #475569;">Subtotal ${typeNames[currentTypeGroup]}:</td>
-                            <td class="text-right" style="padding: 6px 8px; color: #1e3a8a;">${engine.formatCurrency(groupSubtotal, 'DI')}</td>
+                            <td class="text-right" style="padding: 6px 8px; color: #1e3a8a;">${reports.formatCurrency(groupSubtotal, 'DI')}</td>
                         </tr>
                     `;
                     grandTotal += groupSubtotal;
@@ -832,9 +856,9 @@ const reports = {
                     <td class="font-mono text-xs">${item.concept.code}</td>
                     <td class="text-xs">${item.concept.summary}</td>
                     <td class="text-center text-xs text-slate-400">${item.concept.type}</td>
-                    <td class="text-right text-xs">${engine.formatCurrency(item.concept.price, 'DC')}</td>
+                    <td class="text-right text-xs">${reports.formatCurrency(item.concept.price, 'DC')}</td>
                     <td class="text-right text-xs font-bold">${reports.fmtThreeDecimals(item.totalQty)} ${item.concept.unit}</td>
-                    <td class="text-right text-xs font-black">${engine.formatCurrency(totalCost, 'DI')}</td>
+                    <td class="text-right text-xs font-black">${reports.formatCurrency(totalCost, 'DI')}</td>
                 </tr>
             `;
         });
@@ -844,7 +868,7 @@ const reports = {
              content += `
                 <tr style="background-color: #f1f5f9; font-weight: bold; font-size: 10px; border-top: 1px solid #cbd5e1;">
                     <td colspan="5" class="text-right" style="padding: 6px 8px; text-transform: uppercase; color: #475569;">Subtotal ${typeNames[currentTypeGroup]}:</td>
-                    <td class="text-right" style="padding: 6px 8px; color: #1e3a8a;">${engine.formatCurrency(groupSubtotal, 'DI')}</td>
+                    <td class="text-right" style="padding: 6px 8px; color: #1e3a8a;">${reports.formatCurrency(groupSubtotal, 'DI')}</td>
                 </tr>
             `;
             grandTotal += groupSubtotal;
@@ -854,7 +878,7 @@ const reports = {
         content += `
             <tr style="background-color: #1e3a8a; color: white; font-weight: bold; font-size: 12px; border-top: 3px double white;">
                 <td colspan="5" class="text-right" style="padding: 10px; text-transform: uppercase;">TOTAL NECESIDADES DE OBRA:</td>
-                <td class="text-right" style="padding: 10px;">${engine.formatCurrency(grandTotal, 'DI')}</td>
+                <td class="text-right" style="padding: 10px;">${reports.formatCurrency(grandTotal, 'DI')}</td>
             </tr>
         `;
 
@@ -964,9 +988,9 @@ const reports = {
                         <td class="font-mono text-xs font-bold">${item.concept.code}</td>
                         <td class="text-xs">${item.concept.summary}</td>
                         <td class="text-center text-xs text-slate-500">${item.concept.unit}</td>
-                        <td class="text-right text-xs">${engine.formatCurrency(item.concept.price, 'DC')}</td>
+                        <td class="text-right text-xs">${reports.formatCurrency(item.concept.price, 'DC')}</td>
                         <td class="text-right text-xs font-bold bg-yellow-50">${reports.fmtThreeDecimals(item.totalQty)}</td>
-                        <td class="text-right text-xs font-black">${engine.formatCurrency(totalCost, 'DI')}</td>
+                        <td class="text-right text-xs font-black">${reports.formatCurrency(totalCost, 'DI')}</td>
                     </tr>
                 `;
             });
@@ -974,7 +998,7 @@ const reports = {
             content += `
                     <tr style="background-color: #1e3a8a; color: white; font-weight: bold; font-size: 12px; border-top: 3px double white;">
                         <td colspan="5" class="text-right" style="padding: 10px; text-transform: uppercase;">IMPORTE TOTAL AUXILIARES:</td>
-                        <td class="text-right" style="padding: 10px;">${engine.formatCurrency(grandTotal, 'DI')}</td>
+                        <td class="text-right" style="padding: 10px;">${reports.formatCurrency(grandTotal, 'DI')}</td>
                     </tr>
                 </tbody></table>
             `;
@@ -1036,7 +1060,7 @@ const reports = {
                                 <span style="color:#1e40af; font-weight:bold; font-family:monospace; font-size:1.1em; margin-right:10px;">${parent.code}</span>
                                 <span style="font-weight:bold;">${parent.summary}</span>
                             </div>
-                            <span style="font-weight:black; font-size:1.1em;">${engine.formatCurrency(parent.price, 'DC')}</span>
+                            <span style="font-weight:black; font-size:1.1em;">${reports.formatCurrency(parent.price, 'DC')}</span>
                         </div>
                         
                         ${descriptionHtml}
@@ -1067,8 +1091,8 @@ const reports = {
                             <td class="text-xs" style="border-bottom:1px dashed #f1f5f9;">${childConcept ? childConcept.summary : '<span style="color:red">No encontrado</span>'}</td>
                             <td class="text-center text-xs" style="border-bottom:1px dashed #f1f5f9; color:#94a3b8;">${childConcept ? childConcept.unit : ''}</td>
                             <td class="text-right text-xs" style="border-bottom:1px dashed #f1f5f9;">${reports.fmtThreeDecimals(quantity)}</td>
-                            <td class="text-right text-xs" style="border-bottom:1px dashed #f1f5f9;">${engine.formatCurrency(unitPrice, 'DC')}</td>
-                            <td class="text-right text-xs" style="border-bottom:1px dashed #f1f5f9;">${engine.formatCurrency(cost, 'DI')}</td>
+                            <td class="text-right text-xs" style="border-bottom:1px dashed #f1f5f9;">${reports.formatCurrency(unitPrice, 'DC')}</td>
+                            <td class="text-right text-xs" style="border-bottom:1px dashed #f1f5f9;">${reports.formatCurrency(cost, 'DI')}</td>
                         </tr>
                     `;
                 });
@@ -1129,7 +1153,7 @@ const reports = {
                             <span style="color:#1e40af; font-weight:bold; font-family:monospace; font-size:1.1em; margin-right:10px;">${parent.code}</span>
                             <span style="font-weight:bold;">${parent.summary}</span>
                         </div>
-                        <span style="font-weight:black; font-size:1.1em;">${engine.formatCurrency(parent.price, 'DC')}</span>
+                        <span style="font-weight:black; font-size:1.1em;">${reports.formatCurrency(parent.price, 'DC')}</span>
                     </div>
                     
                     ${descriptionHtml}
@@ -1161,8 +1185,8 @@ const reports = {
                         <td class="text-xs" style="border-bottom:1px dashed #f1f5f9;">${childConcept ? childConcept.summary : '<span style="color:red">No encontrado</span>'}</td>
                         <td class="text-center text-xs" style="border-bottom:1px dashed #f1f5f9; color:#94a3b8;">${childConcept ? childConcept.unit : ''}</td>
                         <td class="text-right text-xs" style="border-bottom:1px dashed #f1f5f9;">${reports.fmtThreeDecimals(quantity)}</td>
-                        <td class="text-right text-xs" style="border-bottom:1px dashed #f1f5f9;">${engine.formatCurrency(unitPrice, 'DC')}</td>
-                        <td class="text-right text-xs" style="border-bottom:1px dashed #f1f5f9;">${engine.formatCurrency(cost, 'DI')}</td>
+                        <td class="text-right text-xs" style="border-bottom:1px dashed #f1f5f9;">${reports.formatCurrency(unitPrice, 'DC')}</td>
+                        <td class="text-right text-xs" style="border-bottom:1px dashed #f1f5f9;">${reports.formatCurrency(cost, 'DI')}</td>
                     </tr>
                 `;
             });

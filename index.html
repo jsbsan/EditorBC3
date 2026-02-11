@@ -1,16 +1,16 @@
 <!-- 
     PROYECTO: Visor Profesional FIEBDC-3 (BC3)
-    VERSION: 3.62 (Modeless Update)
+    VERSION: 3.63 (Clipboard Update)
     DESCRIPCION: 
-    - [MODIFICADO] Ventanas de edición convertidas a flotantes (No Modal).
-    - [MEJORA] Interfaz no bloqueante.
+    - [NUEVO] Botones de "Copiar al portapapeles" en Descompuestos, Mediciones y Texto.
+    - [MEJORA] Iconografía para acciones de exportación rápida.
 -->
 <!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Visor Profesional FIEBDC-3 (BC3) v3.62</title>
+    <title>Visor Profesional FIEBDC-3 (BC3) v3.63</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Estilos Personalizados -->
@@ -26,7 +26,7 @@
         </div>
     </div>
 
-    <!-- Modal de Selección de Listados (ESTE SE MANTIENE MODAL POR SER UNA ACCIÓN DE SALIDA) -->
+    <!-- Modal de Selección de Listados -->
     <div id="modal-reports" class="modal-overlay">
         <div class="bg-white rounded-xl shadow-2xl w-full max-w-4xl overflow-hidden transform transition-all scale-100 max-h-[90vh] overflow-y-auto">
             <div class="px-6 py-4 bg-slate-50 border-b border-slate-100 flex justify-between items-center sticky top-0 z-10">
@@ -223,10 +223,7 @@
         </div>
     </div>
 
-    <!-- 
-        [CAMBIO] VENTANA FLOTANTE DE EDICIÓN (ANTES MODAL) 
-        Ahora es una ventana flotante draggable (.floating-window) en lugar de un overlay full-screen.
-    -->
+    <!-- Ventana Flotante DE EDICIÓN (Modeless) -->
     <div id="edit-window" class="floating-window hidden flex flex-col bg-white rounded-xl shadow-2xl border border-slate-300 w-full max-w-lg overflow-hidden" style="top: 100px; left: calc(50% - 16rem);">
         <!-- Cabecera de Arrastre -->
         <div id="edit-window-header" class="drag-handle bg-slate-800 text-white px-4 py-3 flex items-center justify-between cursor-move select-none border-b border-slate-700">
@@ -483,7 +480,19 @@
                 <div class="bg-white rounded-2xl shadow-sm border border-slate-200 flex flex-col overflow-hidden">
                     <div class="p-4 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
                         <h3 class="text-sm font-black text-slate-700 uppercase tracking-tight">Descomposición de Costes</h3>
-                        <button onclick="ui.openAddDecomp()" class="text-slate-400 hover:text-green-600 p-1 rounded hover:bg-slate-100 transition-colors"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" /></svg></button>
+                        <div class="flex items-center gap-1">
+                            <!-- [NUEVO] Botón Copiar Tabla -->
+                            <button onclick="ui.copyDecomposition()" id="btn-copy-decomp" class="text-slate-400 hover:text-blue-600 p-1 rounded hover:bg-slate-100 transition-colors" title="Copiar al portapapeles">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" />
+                                </svg>
+                            </button>
+                            <button onclick="ui.openAddDecomp()" class="text-slate-400 hover:text-green-600 p-1 rounded hover:bg-slate-100 transition-colors">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                                </svg>
+                            </button>
+                        </div>
                     </div>
                     <div class="flex-1 overflow-auto">
                         <table class="w-full text-sm text-left table-sticky">
@@ -508,7 +517,19 @@
                     <div class="bg-white rounded-2xl shadow-sm border border-slate-200 flex flex-col overflow-hidden">
                          <div class="p-4 bg-slate-50 border-b border-slate-200 flex justify-between items-center">
                             <h3 class="text-xs font-black text-slate-500 uppercase tracking-widest">Mediciones (~M)</h3>
-                            <button onclick="ui.openAddMeas()" class="text-slate-400 hover:text-green-600 p-1 rounded hover:bg-slate-100 transition-colors"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" /></svg></button>
+                            <div class="flex items-center gap-1">
+                                <!-- [NUEVO] Botón Copiar Mediciones -->
+                                <button onclick="ui.copyMeasurements()" id="btn-copy-meas" class="text-slate-400 hover:text-blue-600 p-1 rounded hover:bg-slate-100 transition-colors" title="Copiar mediciones">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" />
+                                    </svg>
+                                </button>
+                                <button onclick="ui.openAddMeas()" class="text-slate-400 hover:text-green-600 p-1 rounded hover:bg-slate-100 transition-colors">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                                    </svg>
+                                </button>
+                            </div>
                         </div>
                         <div id="measurements-content" class="flex-1 overflow-auto p-0 text-[11px]">
                              <table class="w-full text-left table-sticky meas-table">
@@ -533,7 +554,24 @@
                     <div class="bg-white rounded-2xl shadow-sm border border-slate-200 flex flex-col overflow-hidden">
                          <div class="p-4 bg-slate-50 border-b border-slate-200 flex justify-between items-center">
                             <h3 class="text-xs font-black text-slate-500 uppercase tracking-widest">Pliego / Texto (~T)</h3>
-                            <button onclick="ui.openEditText()" class="text-slate-400 hover:text-blue-600 p-1 rounded hover:bg-slate-100 transition-colors"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg></button>
+                            <div class="flex items-center gap-1">
+                                <!-- [NUEVO] Botón Copiar Texto -->
+                                <button id="btn-copy-text" onclick="ui.copyText()" class="hidden text-slate-400 hover:text-blue-600 p-1 rounded hover:bg-slate-100 transition-colors" title="Copiar texto">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" />
+                                    </svg>
+                                </button>
+                                <button id="btn-edit-text" onclick="ui.openEditText()" class="text-slate-400 hover:text-blue-600 p-1 rounded hover:bg-slate-100 transition-colors">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                                    </svg>
+                                </button>
+                                <button id="btn-add-text" onclick="ui.openEditText()" class="hidden text-slate-400 hover:text-blue-600 p-1 rounded hover:bg-slate-100 transition-colors">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                                    </svg>
+                                </button>
+                            </div>
                         </div>
                         <div id="long-text-content" class="flex-1 overflow-auto p-6 text-sm text-slate-600 leading-relaxed font-medium"></div>
                     </div>
@@ -555,7 +593,6 @@
     </footer>
 
     <!-- Ventana Flotante LISTADO COMPLETO (No Modal) -->
-    <!-- [CORRECCIÓN] Añadido style con top y right para posicionar la ventana inicialmente -->
     <div id="floating-list-window" class="floating-window hidden flex flex-col bg-white rounded-lg shadow-2xl border border-slate-300 w-80 h-96 overflow-hidden" style="top: 80px; right: 20px;">
         <!-- Cabecera de Arrastre -->
         <div id="floating-list-header" class="drag-handle bg-slate-800 text-white px-3 py-2 flex items-center justify-between cursor-move select-none">

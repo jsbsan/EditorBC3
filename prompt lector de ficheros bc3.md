@@ -315,6 +315,18 @@ Confírmame que has recibido y comprendido el código haciendo un breve resumen 
 - Haz un nuevo listado llamado "Resumen por Capitulos", donde muestres los capitulos y subcapitulos con su valoración y suma final.
 
 
+--------
+PROMPT: Modo ventana NO MODALES. mejora en numeros en pantalla e informes
+---------
+Voy a subir varios archivos de un proyecto web (HTML, CSS y JavaScript). Por ahora, solo quiero que los proceses y los mantengas en tu memoria de contexto. No realices ningún cambio, no reescribas el código ni propongas mejoras todavía.
 
+Confíame que has recibido y comprendido el código haciendo un breve resumen de la estructura del proyecto. Una vez hecho esto, esperaré a que yo te haga preguntas específicas o te pida optimizaciones. ¿Entendido?
 
-
+- Haz que las ventanas de "añadir descompuesto", "Editar descompuesto","añadir medición","Editar medición" y "Editar Texto largo", sean ventanas No Modal (Modeless)
+- El boton "Buscar/listado" no funciona (LO ARREGLA)
+- A la ventana de "Buscador/Listado" añadele un botón, para que el  elemento seleccionado, se añada a la descomposición de costes de la unidad que se viendo en pantalla.
+- En el listado de "Resumen de capítulos", no quiero que aparezca la partida del código "##"
+- En el listado de "Presupuesto General", no quiero que aparezca la partida del código "##"
+- Revisa todos los listados para que los números que aparezcan con coma decimal y separador de millares con punto 
+- Quiero que en la pantalla de descomposición de costes, el precio y el importe también use coma como separador decimal y punto como separador de miles.
+- Añade un botón de copiar al portapapeles, el contenido de los paneles ("Descomposición de costes","Mediciones" y "Pliego/Texto)
