@@ -971,8 +971,9 @@ const ui = {
         const btnDelete = document.getElementById('btn-delete-modal');
         if(btnDelete) btnDelete.classList.remove('hidden');
 
-        const modal = document.getElementById('edit-modal');
-        if(modal) modal.classList.add('active');
+        // [MODIFICADO] Mostrar Ventana Flotante (no modal)
+        const win = document.getElementById('edit-window');
+        if(win) win.classList.remove('hidden');
     },
 
     openAddDecomp() {
@@ -1031,8 +1032,9 @@ const ui = {
         const btnDelete = document.getElementById('btn-delete-modal');
         if(btnDelete) btnDelete.classList.add('hidden');
 
-        const modal = document.getElementById('edit-modal');
-        if(modal) modal.classList.add('active');
+        // [MODIFICADO] Mostrar Ventana Flotante (no modal)
+        const win = document.getElementById('edit-window');
+        if(win) win.classList.remove('hidden');
     },
 
     openEditMeas(measKey, index) {
@@ -1059,8 +1061,9 @@ const ui = {
         const btnDelete = document.getElementById('btn-delete-modal');
         if(btnDelete) btnDelete.classList.remove('hidden');
 
-        const modal = document.getElementById('edit-modal');
-        if(modal) modal.classList.add('active');
+        // [MODIFICADO] Mostrar Ventana Flotante (no modal)
+        const win = document.getElementById('edit-window');
+        if(win) win.classList.remove('hidden');
     },
 
     openAddMeas() {
@@ -1087,8 +1090,9 @@ const ui = {
         const btnDelete = document.getElementById('btn-delete-modal');
         if(btnDelete) btnDelete.classList.add('hidden');
 
-        const modal = document.getElementById('edit-modal');
-        if(modal) modal.classList.add('active');
+        // [MODIFICADO] Mostrar Ventana Flotante (no modal)
+        const win = document.getElementById('edit-window');
+        if(win) win.classList.remove('hidden');
     },
 
     openEditSummary() {
@@ -1111,8 +1115,9 @@ const ui = {
         const btnDelete = document.getElementById('btn-delete-modal');
         if(btnDelete) btnDelete.classList.add('hidden');
 
-        const modal = document.getElementById('edit-modal');
-        if(modal) modal.classList.add('active');
+        // [MODIFICADO] Mostrar Ventana Flotante (no modal)
+        const win = document.getElementById('edit-window');
+        if(win) win.classList.remove('hidden');
     },
 
     openEditText() {
@@ -1135,8 +1140,9 @@ const ui = {
         const btnDelete = document.getElementById('btn-delete-modal');
         if(btnDelete) btnDelete.classList.add('hidden');
 
-        const modal = document.getElementById('edit-modal');
-        if(modal) modal.classList.add('active');
+        // [MODIFICADO] Mostrar Ventana Flotante (no modal)
+        const win = document.getElementById('edit-window');
+        if(win) win.classList.remove('hidden');
     },
 
     openEditPrice() {
@@ -1155,15 +1161,18 @@ const ui = {
         const btnDelete = document.getElementById('btn-delete-modal');
         if(btnDelete) btnDelete.classList.add('hidden');
 
-        const modal = document.getElementById('edit-modal');
-        if(modal) modal.classList.add('active');
+        // [MODIFICADO] Mostrar Ventana Flotante (no modal)
+        const win = document.getElementById('edit-window');
+        if(win) win.classList.remove('hidden');
     },
 
     closeModal() {
         const btnDelete = document.getElementById('btn-delete-modal');
         if(btnDelete) btnDelete.classList.add('hidden'); 
-        const modal = document.getElementById('edit-modal');
-        if(modal) modal.classList.remove('active');
+        
+        // [MODIFICADO] Cerrar Ventana Flotante (no modal)
+        const win = document.getElementById('edit-window');
+        if(win) win.classList.add('hidden');
     },
 
     toggleListWindow: () => {
@@ -1820,6 +1829,10 @@ document.addEventListener('DOMContentLoaded', () => {
     // Draggable Window
     const floatWin = document.getElementById("floating-list-window");
     if(floatWin) ui.initDraggable(floatWin);
+    
+    // [NUEVO] Inicializar ventana flotante de edición
+    const editWin = document.getElementById("edit-window");
+    if(editWin) ui.initDraggable(editWin);
 
     // [MODIFICADO] File Input para ABRIR (Reemplaza proyecto actual)
     const fInput = document.getElementById('fileInput');

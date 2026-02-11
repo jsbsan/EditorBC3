@@ -44,7 +44,7 @@ body {
     justify-content: center;
 }
 
-/* Modal Overlay */
+/* Modal Overlay (Solo para Reportes ahora) */
 .modal-overlay {
     display: none;
     position: fixed;
@@ -70,14 +70,19 @@ body {
 /* --- NUEVO: Estilos para Ventana Flotante --- */
 .floating-window {
     position: absolute;
-    top: 80px;
-    right: 20px;
-    z-index: 900; /* Por debajo del modal, pero por encima del contenido */
-    resize: both; /* Permite redimensionar */
-    overflow: auto; /* Necesario para resize */
+    /* top y left se manejan inline o JS */
+    z-index: 900; 
+    resize: both; 
+    overflow: hidden; /* Ajuste para bordes redondeados */
     min-width: 250px;
     min-height: 200px;
-    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+    box-shadow: 0 15px 35px -5px rgba(0, 0, 0, 0.2), 0 10px 10px -5px rgba(0, 0, 0, 0.1); /* Sombra más pronunciada */
+}
+
+/* Specific styling for the Edit Window (Modeless) */
+#edit-window {
+    z-index: 1100; /* Higher than search list */
+    resize: vertical; /* Only vertical resize makes sense for forms */
 }
 
 .drag-handle {

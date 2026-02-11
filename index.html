@@ -1,16 +1,16 @@
 <!-- 
     PROYECTO: Visor Profesional FIEBDC-3 (BC3)
-    VERSION: 3.61
+    VERSION: 3.62 (Modeless Update)
     DESCRIPCION: 
-    - [NUEVO] Botón "Resumen por Capítulos" en Documentación General.
-    - [MEJORA] Reajuste de grid en modal de informes (3 columnas para generales).
+    - [MODIFICADO] Ventanas de edición convertidas a flotantes (No Modal).
+    - [MEJORA] Interfaz no bloqueante.
 -->
 <!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Visor Profesional FIEBDC-3 (BC3) v3.61</title>
+    <title>Visor Profesional FIEBDC-3 (BC3) v3.62</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Estilos Personalizados -->
@@ -26,7 +26,7 @@
         </div>
     </div>
 
-    <!-- Modal de Selección de Listados -->
+    <!-- Modal de Selección de Listados (ESTE SE MANTIENE MODAL POR SER UNA ACCIÓN DE SALIDA) -->
     <div id="modal-reports" class="modal-overlay">
         <div class="bg-white rounded-xl shadow-2xl w-full max-w-4xl overflow-hidden transform transition-all scale-100 max-h-[90vh] overflow-y-auto">
             <div class="px-6 py-4 bg-slate-50 border-b border-slate-100 flex justify-between items-center sticky top-0 z-10">
@@ -46,7 +46,6 @@
             <div class="p-6">
                 <!-- Sección 1: Documentos Generales -->
                 <h4 class="text-xs font-black text-slate-400 uppercase tracking-widest mb-4 border-b pb-2">Documentación General</h4>
-                <!-- Cambiado grid a 3 columnas para acomodar 5 elementos -->
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
                     <!-- Presupuesto -->
                     <button onclick="reports.generateBudgetReport()" class="flex flex-col gap-2 p-4 border border-slate-200 rounded-xl hover:bg-blue-50 hover:border-blue-300 transition-all group text-left h-full">
@@ -63,7 +62,7 @@
                         </div>
                     </button>
 
-                    <!-- Resumen de Capítulos [NUEVO] -->
+                    <!-- Resumen de Capítulos -->
                     <button onclick="reports.generateChapterSummaryReport()" class="flex flex-col gap-2 p-4 border border-slate-200 rounded-xl hover:bg-lime-50 hover:border-lime-300 transition-all group text-left h-full">
                         <div class="flex items-center justify-between w-full">
                             <div class="bg-lime-100 p-2 rounded-lg group-hover:bg-lime-200 transition-colors">
@@ -224,124 +223,130 @@
         </div>
     </div>
 
-    <!-- Modal de Edición -->
-    <div id="edit-modal" class="modal-overlay">
-        <div class="bg-white rounded-xl shadow-2xl w-full max-w-lg overflow-hidden transform transition-all scale-100">
-            <div class="px-6 py-4 bg-slate-50 border-b border-slate-100 flex justify-between items-center">
-                <h3 id="modal-title" class="font-bold text-slate-700">Editar Registro</h3>
-                <button onclick="ui.closeModal()" class="text-slate-400 hover:text-red-500 transition-colors">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                </button>
-            </div>
-            
-            <div class="p-6">
-                <!-- Formulario Textos -->
-                <form id="form-text-edit" class="hidden space-y-4">
-                    <div>
-                        <label id="lbl-text-edit" class="block text-xs font-bold text-slate-500 uppercase mb-1">Texto</label>
-                        <textarea id="input-text-edit" rows="5" class="w-full border border-slate-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-blue-500"></textarea>
-                    </div>
-                </form>
+    <!-- 
+        [CAMBIO] VENTANA FLOTANTE DE EDICIÓN (ANTES MODAL) 
+        Ahora es una ventana flotante draggable (.floating-window) en lugar de un overlay full-screen.
+    -->
+    <div id="edit-window" class="floating-window hidden flex flex-col bg-white rounded-xl shadow-2xl border border-slate-300 w-full max-w-lg overflow-hidden" style="top: 100px; left: calc(50% - 16rem);">
+        <!-- Cabecera de Arrastre -->
+        <div id="edit-window-header" class="drag-handle bg-slate-800 text-white px-4 py-3 flex items-center justify-between cursor-move select-none border-b border-slate-700">
+            <h3 id="modal-title" class="font-bold text-sm tracking-wide flex items-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                </svg>
+                Editar Registro
+            </h3>
+            <button onclick="ui.closeModal()" class="text-slate-400 hover:text-red-400 transition-colors">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+            </button>
+        </div>
+        
+        <div class="p-6 max-h-[70vh] overflow-y-auto">
+            <!-- Formulario Textos -->
+            <form id="form-text-edit" class="hidden space-y-4">
+                <div>
+                    <label id="lbl-text-edit" class="block text-xs font-bold text-slate-500 uppercase mb-1">Texto</label>
+                    <textarea id="input-text-edit" rows="5" class="w-full border border-slate-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-blue-500"></textarea>
+                </div>
+            </form>
 
-                <!-- Formulario Precio -->
-                <form id="form-price" class="hidden space-y-4">
-                    <div>
-                        <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Precio Unitario</label>
-                        <input type="number" step="any" id="input-price" class="w-full border border-slate-300 rounded px-3 py-2 text-lg font-bold text-blue-600 text-right focus:outline-none focus:border-blue-500">
-                    </div>
-                </form>
+            <!-- Formulario Precio -->
+            <form id="form-price" class="hidden space-y-4">
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Precio Unitario</label>
+                    <input type="number" step="any" id="input-price" class="w-full border border-slate-300 rounded px-3 py-2 text-lg font-bold text-blue-600 text-right focus:outline-none focus:border-blue-500">
+                </div>
+            </form>
 
-                <!-- Formulario Descompuesto -->
-                <form id="form-decomp" class="hidden space-y-4">
-                    <input type="hidden" id="decomp-index">
-                    <div class="grid grid-cols-3 gap-4">
-                        <div class="col-span-2">
-                            <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Código Recurso</label>
-                            <input type="text" id="decomp-code" class="w-full bg-slate-50 border border-slate-300 rounded px-3 py-2 text-sm font-mono text-blue-600 focus:outline-none focus:border-blue-500" readonly>
-                        </div>
-                        <div class="col-span-1">
-                            <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Unidad</label>
-                            <input type="text" id="decomp-unit" class="w-full border border-slate-300 rounded px-3 py-2 text-sm text-center focus:outline-none focus:border-blue-500" placeholder="ud, m2...">
-                        </div>
+            <!-- Formulario Descompuesto -->
+            <form id="form-decomp" class="hidden space-y-4">
+                <input type="hidden" id="decomp-index">
+                <div class="grid grid-cols-3 gap-4">
+                    <div class="col-span-2">
+                        <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Código Recurso</label>
+                        <input type="text" id="decomp-code" class="w-full bg-slate-50 border border-slate-300 rounded px-3 py-2 text-sm font-mono text-blue-600 focus:outline-none focus:border-blue-500" readonly>
                     </div>
+                    <div class="col-span-1">
+                        <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Unidad</label>
+                        <input type="text" id="decomp-unit" class="w-full border border-slate-300 rounded px-3 py-2 text-sm text-center focus:outline-none focus:border-blue-500" placeholder="ud, m2...">
+                    </div>
+                </div>
 
-                    <!-- [NUEVO] Checkbox para marcar como capítulo -->
-                    <div class="flex items-center">
-                        <input type="checkbox" id="decomp-is-chapter" class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2">
-                        <label for="decomp-is-chapter" class="ml-2 text-xs font-bold text-slate-500 uppercase cursor-pointer">¿es un capítulo?</label>
-                    </div>
+                <div class="flex items-center">
+                    <input type="checkbox" id="decomp-is-chapter" class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2">
+                    <label for="decomp-is-chapter" class="ml-2 text-xs font-bold text-slate-500 uppercase cursor-pointer">¿es un capítulo?</label>
+                </div>
 
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Resumen / Descripción</label>
+                    <input type="text" id="decomp-summary" class="w-full border border-slate-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-blue-500 placeholder-slate-300" placeholder="Nombre del concepto">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Tipo de Recurso</label>
+                    <select id="decomp-type" class="w-full border border-slate-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-blue-500">
+                        <option value="0">📄 Sin clasificar / Otros</option>
+                        <option value="1">👷 Mano de obra (h)</option>
+                        <option value="2">🚜 Maquinaria (h)</option>
+                        <option value="3">🧱 Materiales</option>
+                    </select>
+                </div>
+                <div class="grid grid-cols-2 gap-4">
                     <div>
-                        <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Resumen / Descripción</label>
-                        <input type="text" id="decomp-summary" class="w-full border border-slate-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-blue-500 placeholder-slate-300" placeholder="Nombre del concepto">
+                        <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Factor</label>
+                        <input type="number" step="any" id="decomp-factor" class="w-full border border-slate-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-blue-500 text-right">
                     </div>
                     <div>
-                        <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Tipo de Recurso</label>
-                        <select id="decomp-type" class="w-full border border-slate-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-blue-500">
-                            <option value="0">📄 Sin clasificar / Otros</option>
-                            <option value="1">👷 Mano de obra (h)</option>
-                            <option value="2">🚜 Maquinaria (h)</option>
-                            <option value="3">🧱 Materiales</option>
+                        <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Rendimiento</label>
+                        <input type="number" step="any" id="decomp-yield" class="w-full border border-slate-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-blue-500 text-right">
+                    </div>
+                </div>
+            </form>
+
+            <!-- Formulario Mediciones -->
+            <form id="form-meas" class="hidden space-y-4">
+                <input type="hidden" id="meas-index">
+                <div class="grid grid-cols-4 gap-4">
+                    <div class="col-span-1">
+                        <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Tipo</label>
+                        <select id="meas-type" class="w-full border border-slate-300 rounded px-2 py-2 text-sm focus:outline-none focus:border-blue-500">
+                            <option value="">Normal</option>
+                            <option value="1">Subtotal Parcial</option>
+                            <option value="2">Subtotal Acumulado</option>
+                            <option value="3">Fórmula</option>
                         </select>
                     </div>
-                    <div class="grid grid-cols-2 gap-4">
-                        <div>
-                            <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Factor</label>
-                            <input type="number" step="any" id="decomp-factor" class="w-full border border-slate-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-blue-500 text-right">
-                        </div>
-                        <div>
-                            <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Rendimiento</label>
-                            <input type="number" step="any" id="decomp-yield" class="w-full border border-slate-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-blue-500 text-right">
-                        </div>
+                    <div class="col-span-3">
+                        <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Comentario / Fórmula</label>
+                        <input type="text" id="meas-comment" class="w-full border border-slate-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-blue-500">
                     </div>
-                </form>
+                </div>
+                <div class="grid grid-cols-4 gap-2">
+                    <div>
+                        <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1 text-center">Unidades (N)</label>
+                        <input type="number" step="any" id="meas-u" class="w-full border border-slate-300 rounded px-2 py-2 text-sm text-right focus:outline-none focus:border-blue-500">
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1 text-center">Longitud</label>
+                        <input type="number" step="any" id="meas-l" class="w-full border border-slate-300 rounded px-2 py-2 text-sm text-right focus:outline-none focus:border-blue-500">
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1 text-center">Anchura</label>
+                        <input type="number" step="any" id="meas-w" class="w-full border border-slate-300 rounded px-2 py-2 text-sm text-right focus:outline-none focus:border-blue-500">
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1 text-center">Altura</label>
+                        <input type="number" step="any" id="meas-h" class="w-full border border-slate-300 rounded px-2 py-2 text-sm text-right focus:outline-none focus:border-blue-500">
+                    </div>
+                </div>
+            </form>
+        </div>
 
-                <!-- Formulario Mediciones -->
-                <form id="form-meas" class="hidden space-y-4">
-                    <input type="hidden" id="meas-index">
-                    <div class="grid grid-cols-4 gap-4">
-                        <div class="col-span-1">
-                            <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Tipo</label>
-                            <select id="meas-type" class="w-full border border-slate-300 rounded px-2 py-2 text-sm focus:outline-none focus:border-blue-500">
-                                <option value="">Normal</option>
-                                <option value="1">Subtotal Parcial</option>
-                                <option value="2">Subtotal Acumulado</option>
-                                <option value="3">Fórmula</option>
-                            </select>
-                        </div>
-                        <div class="col-span-3">
-                            <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Comentario / Fórmula</label>
-                            <input type="text" id="meas-comment" class="w-full border border-slate-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-blue-500">
-                        </div>
-                    </div>
-                    <div class="grid grid-cols-4 gap-2">
-                        <div>
-                            <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1 text-center">Unidades (N)</label>
-                            <input type="number" step="any" id="meas-u" class="w-full border border-slate-300 rounded px-2 py-2 text-sm text-right focus:outline-none focus:border-blue-500">
-                        </div>
-                        <div>
-                            <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1 text-center">Longitud</label>
-                            <input type="number" step="any" id="meas-l" class="w-full border border-slate-300 rounded px-2 py-2 text-sm text-right focus:outline-none focus:border-blue-500">
-                        </div>
-                        <div>
-                            <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1 text-center">Anchura</label>
-                            <input type="number" step="any" id="meas-w" class="w-full border border-slate-300 rounded px-2 py-2 text-sm text-right focus:outline-none focus:border-blue-500">
-                        </div>
-                        <div>
-                            <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1 text-center">Altura</label>
-                            <input type="number" step="any" id="meas-h" class="w-full border border-slate-300 rounded px-2 py-2 text-sm text-right focus:outline-none focus:border-blue-500">
-                        </div>
-                    </div>
-                </form>
-            </div>
-
-            <div class="px-6 py-4 bg-slate-50 border-t border-slate-100 flex justify-end gap-3">
-                <button id="btn-delete-modal" onclick="ui.deleteEntry()" class="hidden px-4 py-2 text-sm font-medium text-white bg-red-500 hover:bg-red-600 rounded-md shadow-sm transition-colors mr-auto">Eliminar</button>
-                <button onclick="ui.closeModal()" class="px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-200 rounded-md transition-colors">Cancelar</button>
-                <button onclick="ui.saveEdit()" class="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-md shadow-sm transition-colors">Guardar Cambios</button>
-            </div>
+        <div class="px-6 py-4 bg-slate-50 border-t border-slate-100 flex justify-end gap-3 sticky bottom-0">
+            <button id="btn-delete-modal" onclick="ui.deleteEntry()" class="hidden px-4 py-2 text-sm font-medium text-white bg-red-500 hover:bg-red-600 rounded-md shadow-sm transition-colors mr-auto">Eliminar</button>
+            <button onclick="ui.closeModal()" class="px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-200 rounded-md transition-colors">Cancelar</button>
+            <button onclick="ui.saveEdit()" class="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-md shadow-sm transition-colors">Guardar Cambios</button>
         </div>
     </div>
 
@@ -371,7 +376,7 @@
 
             <div class="h-6 w-px bg-slate-700 mx-2"></div>
 
-            <!-- NUEVO: Botón Nuevo Proyecto -->
+            <!-- Botón Nuevo Proyecto -->
             <button onclick="ui.createNewProject()" class="flex items-center gap-2 bg-blue-700 hover:bg-blue-600 text-white px-3 py-2 rounded-md transition-colors shadow font-medium text-xs border border-blue-500" title="Crear proyecto vacío">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
@@ -387,7 +392,7 @@
                 <input type="file" id="fileInput" class="hidden" accept=".bc3,.txt">
             </label>
 
-            <!-- NUEVO: Botón Importar (Fusionar) -->
+            <!-- Botón Importar (Fusionar) -->
             <label class="flex items-center gap-2 bg-slate-600 hover:bg-slate-500 px-3 py-2 rounded-md cursor-pointer transition-all shadow border border-slate-500 text-xs font-medium text-white" title="Importar conceptos sin sobrescribir existentes">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a2 2 0 002 2h12a2 2 0 002-2v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
@@ -425,7 +430,6 @@
         <!-- Panel Izquierdo: Jerarquía (Árbol) -->
         <aside class="col-span-12 lg:col-span-4 xl:col-span-3 flex flex-col gap-4 overflow-hidden">
             <div class="bg-white rounded-2xl shadow-sm border border-slate-200 flex flex-col overflow-hidden h-full">
-                <!-- Ya no hay pestañas aquí, solo título -->
                 <div class="flex items-center justify-between p-3 bg-slate-50 border-b border-slate-200 shrink-0">
                     <h2 class="text-xs font-black uppercase tracking-widest text-slate-400">Estructura del Proyecto</h2>
                     <span id="nodes-count" class="bg-blue-100 text-blue-700 text-[9px] px-2 py-0.5 rounded-full font-bold">0</span>
@@ -551,7 +555,8 @@
     </footer>
 
     <!-- Ventana Flotante LISTADO COMPLETO (No Modal) -->
-    <div id="floating-list-window" class="floating-window hidden flex flex-col bg-white rounded-lg shadow-2xl border border-slate-300 w-80 h-96 overflow-hidden">
+    <!-- [CORRECCIÓN] Añadido style con top y right para posicionar la ventana inicialmente -->
+    <div id="floating-list-window" class="floating-window hidden flex flex-col bg-white rounded-lg shadow-2xl border border-slate-300 w-80 h-96 overflow-hidden" style="top: 80px; right: 20px;">
         <!-- Cabecera de Arrastre -->
         <div id="floating-list-header" class="drag-handle bg-slate-800 text-white px-3 py-2 flex items-center justify-between cursor-move select-none">
             <div class="flex items-center gap-2">
