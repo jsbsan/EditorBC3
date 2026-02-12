@@ -1,7 +1,8 @@
 /**
  * PROYECTO: Visor Profesional FIEBDC-3 (BC3)
- * VERSION: 3.71 (Clipboard Features)
+ * VERSION: 3.80 (Paste Features)
  * DESCRIPCION: 
+ * - [NUEVO] Funcionalidad pasteMeasurements para pegar datos tabulados (Excel).
  * - [VISUAL] Formato numérico estricto en UI: Coma decimal y Punto de millares (es-ES).
  * - [NUEVO] Botón en listado de búsqueda para añadir concepto a la partida actual.
  * - [MEJORA] Lógica de asignación rápida de recursos.
@@ -793,6 +794,92 @@ const ui = {
              }
         }
         ui.copyToClipboard(text, 'btn-copy-meas');
+    },
+
+    // [NUEVO] Función para pegar mediciones desde portapapeles
+    pasteMeasurements: async () => {
+        if (!ui.currentMeasKey) {
+            ui.showToast("Seleccione una partida primero.");
+            return;
+        }
+
+        try {
+            const text = await navigator.clipboard.readText();
+            if (!text || !text.trim()) return;
+
+            const rows = text.split(/\r\n|\n|\r/);
+            const parsedRows = [];
+
+            rows.forEach((row, index) => {
+                if (!row.trim()) return;
+                const cols = row.split('\t');
+                
+                // Mapeo solicitado:
+                // Col 0: Comentario
+                // Col 1: N (Unidades)
+                // Col 2: L (Longitud)
+                // Col 3: A (Anchura)
+                // Col 4: H (Altura)
+                // Col 5: Fórmula (si existe y tiene valor, sobrescribe comportamiento)
+                
+                const rawComment = cols[0] ? cols[0].trim() : "";
+                const rawN = cols[1] ? cols[1].replace(',', '.').trim() : ""; // Sanitizar decimales
+                const rawL = cols[2] ? cols[2].replace(',', '.').trim() : "";
+                const rawA = cols[3] ? cols[3].replace(',', '.').trim() : "";
+                const rawH = cols[4] ? cols[4].replace(',', '.').trim() : "";
+                const rawF = cols[5] ? cols[5].trim() : "";
+
+                const valN = parseFloat(rawN);
+                const valL = parseFloat(rawL);
+                const valA = parseFloat(rawA);
+                const valH = parseFloat(rawH);
+
+                // Detección de cabecera en la primera fila: Si alguna columna dimensional tiene texto
+                if (index === 0) {
+                    const isHeader = (rawN && isNaN(valN)) || (rawL && isNaN(valL)) || (rawA && isNaN(valA)) || (rawH && isNaN(valH));
+                    if (isHeader) return; // Saltar esta fila
+                }
+
+                let type = "";
+                let comment = rawComment;
+                
+                // Si hay fórmula en la columna 6, esto tiene prioridad
+                if (rawF) {
+                    type = "3";
+                    comment = rawF; 
+                }
+
+                parsedRows.push({
+                    type: type,
+                    comment: comment,
+                    units: isNaN(valN) ? 0 : valN,
+                    length: isNaN(valL) ? 0 : valL,
+                    width: isNaN(valA) ? 0 : valA,
+                    height: isNaN(valH) ? 0 : valH
+                });
+            });
+
+            if (parsedRows.length > 0) {
+                let measData = engine.measurementsMap.get(ui.currentMeasKey);
+                if (!measData) {
+                    measData = { total: 0, lines: [] };
+                    engine.measurementsMap.set(ui.currentMeasKey, measData);
+                }
+                
+                // Añadir las nuevas filas
+                measData.lines.push(...parsedRows);
+                
+                // Recalcular y refrescar UI
+                ui.recalculate();
+                ui.showToast(`Pegadas ${parsedRows.length} líneas de medición.`);
+            } else {
+                ui.showToast("No se encontraron líneas válidas para pegar.");
+            }
+
+        } catch (err) {
+            console.error("Error al leer portapapeles:", err);
+            alert("No se pudo acceder al portapapeles. Verifique los permisos del navegador.");
+        }
     },
     
     copyText: () => { 

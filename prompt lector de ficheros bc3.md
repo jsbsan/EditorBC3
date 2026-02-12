@@ -330,3 +330,11 @@ Confíame que has recibido y comprendido el código haciendo un breve resumen de
 - Revisa todos los listados para que los números que aparezcan con coma decimal y separador de millares con punto 
 - Quiero que en la pantalla de descomposición de costes, el precio y el importe también use coma como separador decimal y punto como separador de miles.
 - Añade un botón de copiar al portapapeles, el contenido de los paneles ("Descomposición de costes","Mediciones" y "Pliego/Texto)
+
+
+--------
+PROMPT: Pegar listado de mediciones
+---------
+Voy a subir varios archivos de un proyecto web (HTML, CSS y JavaScript). Por ahora, solo quiero que los proceses y los mantengas en tu memoria de contexto. No realices ningún cambio, no reescribas el código ni propongas mejoras todavía.
+Nueva mejora: Quiero pegar el contenido del portapapeles a las mediciones de la partida. Pon un botón en el panel "mediciones" para pegar. Si el portapapeles esta vacio, no hagas nada. Si el portapapeles contiene textos y numeros separados por tabulador, quiero la primera columna la asignes a comentario, y las siguientes a N,L,A,H,Formula. El portapapeles puede contener varias filas, añadelas a las mediciones. Si la primera fila todas las columnas contienen texto, no la añadas, sigue con las demas.
+
