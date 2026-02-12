@@ -1,12 +1,11 @@
 /**
  * PROYECTO: Visor Profesional FIEBDC-3 (BC3)
- * VERSION: 3.80 (Paste Features)
+ * VERSION: 3.81 (About Modal)
  * DESCRIPCION: 
+ * - [NUEVO] Funciones para gestionar el modal "Acerca de".
  * - [NUEVO] Funcionalidad pasteMeasurements para pegar datos tabulados (Excel).
  * - [VISUAL] Formato numérico estricto en UI: Coma decimal y Punto de millares (es-ES).
  * - [NUEVO] Botón en listado de búsqueda para añadir concepto a la partida actual.
- * - [MEJORA] Lógica de asignación rápida de recursos.
- * - [NUEVO] Funciones de copiado al portapapeles para tablas y texto.
  */
 
 class BC3Engine {
@@ -630,6 +629,17 @@ const ui = {
     currentMeasKey: null,
     currentNode: null,
     
+    // [NUEVO] Gestión del Modal Acerca de...
+    openAboutModal: () => {
+        const modal = document.getElementById('modal-about');
+        if (modal) modal.classList.add('active');
+    },
+
+    closeAboutModal: () => {
+        const modal = document.getElementById('modal-about');
+        if (modal) modal.classList.remove('active');
+    },
+
     createNewProject: () => {
         const name = prompt("Introduzca el nombre del nuevo proyecto (Raíz):", "NUEVO PROYECTO");
         if(name) {

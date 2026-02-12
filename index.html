@@ -1,17 +1,18 @@
 <!-- 
     PROYECTO: Visor Profesional FIEBDC-3 (BC3)
-    VERSION: 3.80 (Paste Features)
+    VERSION: 3.81 (About Modal)
     DESCRIPCION: 
-    - [NUEVO] Botón "Pegar Mediciones" desde portapapeles (Excel/CSV Tabulado).
-    - [NUEVO] Botones de "Copiar al portapapeles" en Descompuestos, Mediciones y Texto.
-    - [MEJORA] Iconografía para acciones de exportación rápida.
+    - [MEJORA] Botón explícito "Acerca de..." en el pie de página.
+    - [NUEVO] Ventana modal "Acerca de..." con información de autoría y licencia.
+    - [NUEVO] Botón "Pegar Mediciones" desde portapapeles.
+    - [NUEVO] Botones de "Copiar al portapapeles".
 -->
 <!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Visor Profesional FIEBDC-3 (BC3) v3.80</title>
+    <title>Visor Profesional FIEBDC-3 (BC3) v3.81</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Estilos Personalizados -->
@@ -24,6 +25,47 @@
         <div class="flex flex-col items-center">
             <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
             <p id="loader-text" class="mt-4 text-slate-600 font-semibold tracking-wide">Procesando...</p>
+        </div>
+    </div>
+
+    <!-- Modal "Acerca de..." -->
+    <div id="modal-about" class="modal-overlay" onclick="if(event.target === this) ui.closeAboutModal()">
+        <div class="bg-white rounded-2xl shadow-2xl p-8 max-w-sm w-full text-center relative transform transition-all scale-100">
+            <button onclick="ui.closeAboutModal()" class="absolute top-4 right-4 text-slate-300 hover:text-slate-500 transition-colors">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+            </button>
+
+            <div class="w-20 h-20 bg-blue-600 rounded-2xl mx-auto flex items-center justify-center shadow-lg mb-6 text-white">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                </svg>
+            </div>
+
+            <h3 class="text-xl font-black text-slate-800 mb-1">BC3 Pro Analyzer</h3>
+            <p class="text-xs text-blue-500 font-bold uppercase tracking-widest mb-6">Ingeniería FIEBDC-3</p>
+
+            <div class="border-t border-slate-100 pt-6 space-y-4">
+                <div class="flex flex-col gap-1">
+                    <span class="text-[10px] uppercase text-slate-400 font-bold">Autor</span>
+                    <span class="text-slate-700 font-medium">Julio Sánchez Berro</span>
+                </div>
+
+                <div class="flex flex-col gap-1">
+                    <span class="text-[10px] uppercase text-slate-400 font-bold">Licencia</span>
+                    <div class="flex items-center justify-center gap-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                        </svg>
+                        <span class="bg-slate-100 text-slate-600 px-2 py-1 rounded text-xs font-mono font-bold">GPL 3.00</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mt-8 text-[10px] text-slate-300">
+                Versión 3.81 Build 2024
+            </div>
         </div>
     </div>
 
@@ -593,9 +635,14 @@
             <span id="status-version">Formato: -</span>
             <span id="status-currency">Divisa: -</span>
         </div>
-        <div class="flex items-center gap-2 text-blue-600">
-            <span class="w-2 h-2 rounded-full bg-blue-500 animate-pulse"></span>
-            Motor BC3 V3.58 - Profesional
+        <div class="flex items-center gap-4">
+            <div class="flex items-center gap-2 text-blue-600">
+                <span class="w-2 h-2 rounded-full bg-blue-500 animate-pulse"></span>
+                Motor BC3 V3.81 - Profesional
+            </div>
+            <button onclick="ui.openAboutModal()" class="bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-slate-700 px-3 py-1 rounded border border-slate-200 transition-colors">
+                Acerca de...
+            </button>
         </div>
     </footer>
 
