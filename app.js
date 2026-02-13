@@ -1,11 +1,12 @@
 /**
  * PROYECTO: Visor Profesional FIEBDC-3 (BC3)
- * VERSION: 3.81 (About Modal)
+ * VERSION: 3.82 (Filename Management)
  * DESCRIPCION: 
+ * - [MEJORA] Gestión inteligente de nombres de archivo al Guardar.
+ * - [LOGICA] Al abrir, se conserva el nombre original.
+ * - [LOGICA] Al guardar, se usa el nombre original (o el de la raíz si es nuevo) + Fecha/Hora.
  * - [NUEVO] Funciones para gestionar el modal "Acerca de".
- * - [NUEVO] Funcionalidad pasteMeasurements para pegar datos tabulados (Excel).
- * - [VISUAL] Formato numérico estricto en UI: Coma decimal y Punto de millares (es-ES).
- * - [NUEVO] Botón en listado de búsqueda para añadir concepto a la partida actual.
+ * - [NUEVO] Funcionalidad pasteMeasurements.
  */
 
 class BC3Engine {
@@ -18,6 +19,7 @@ class BC3Engine {
             dn: 2, dd: 2, ds: 2, dr: 3, di: 2, dp: 2, dc: 2, dm: 2 
         };
         this.rootCode = null;
+        this.fileName = null; // [NUEVO] Almacena el nombre del fichero original
     }
 
     reset() {
@@ -25,6 +27,7 @@ class BC3Engine {
         this.measurementsMap.clear();
         this.parentMap.clear();
         this.rootCode = null;
+        this.fileName = null;
         this.metadata.currency = '€';
     }
 
@@ -36,6 +39,7 @@ class BC3Engine {
         if (!rootCode.endsWith('#')) rootCode += '##';
         
         this.rootCode = rootCode;
+        this.fileName = null; // Es nuevo, no tiene fichero origen
         
         this.db.set(rootCode, {
             code: rootCode,
@@ -768,9 +772,28 @@ const ui = {
         const blob = new Blob([tempBuf], { type: 'application/octet-stream' });
         const url = URL.createObjectURL(blob);
         
+        // [MEJORA] Lógica de nombre de fichero inteligente
+        const now = new Date();
+        const dateStr = now.toISOString().slice(0,10); // YYYY-MM-DD
+        const timeStr = now.toTimeString().slice(0,5).replace(':','-'); // HH-MM
+        
+        let baseName = "proyecto";
+        
+        if (engine.fileName) {
+            baseName = engine.fileName;
+        } else if (engine.rootCode) {
+            const root = engine.resolveConcept(engine.rootCode);
+            if (root && root.summary) {
+                // Sanitizar nombre para evitar caracteres inválidos en OS
+                baseName = root.summary.replace(/[^a-z0-9áéíóúñ_\-\s]/gi, '').trim();
+            }
+        }
+        
+        const finalFileName = `${baseName}_${dateStr}_${timeStr}.bc3`;
+
         const a = document.createElement('a');
         a.href = url;
-        a.download = `proyecto_${new Date().toISOString().slice(0,10)}.bc3`;
+        a.download = finalFileName;
         document.body.appendChild(a);
         a.click();
         
@@ -2001,6 +2024,9 @@ document.addEventListener('DOMContentLoaded', () => {
         fInput.addEventListener('change', async (e) => {  
             const file = e.target.files[0];
             if (!file) return;
+            // [NUEVO] Guardar nombre de archivo
+            engine.fileName = file.name.replace(/\.[^/.]+$/, ""); // Quitar extensión
+            
             const loader = document.getElementById('loader');
             if(loader) loader.style.display = 'flex';
             const reader = new FileReader();

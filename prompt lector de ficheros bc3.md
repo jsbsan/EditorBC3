@@ -344,3 +344,11 @@ PROMPT: Acerca de...
 
 Quiero añadir una ventana a modo de "Acerca de...", con la información del nombre del programa, autor (Julio Sánchez Berro) y tipo de licencia GPL 3.00
 
+
+---------
+PROMPT: Nombre del fichero
+---------
+Nueva mejora:
+Cuando abres un fichero bc3, quiero que almacenes en memoria el nombre. 
+Cuando lo guardes pon el mismo nombre y le añadas la fecha y hora al nombre, añadiendo la extensión bc3
+Si has creado un presupuesto nuevo, usa el nombre del concepto raiz ##, para ponerle nombre al fichero.
