@@ -1,7 +1,7 @@
 /**
  * PROYECTO: Visor Profesional FIEBDC-3 (BC3)
  * MODULO: Generador de Listados Jerárquicos
- * VERSION: 3.78
+ * VERSION: 3.84
  * DESCRIPCION: 
  * - [MEJORA] Listado "Necesidades": Explosión completa de insumos. No lista auxiliares, sino sus componentes básicos.
  * - [MEJORA] Listado de "Descompuestos" filtra partidas auxiliares.
@@ -9,6 +9,7 @@
  * - [NUEVO] Listado de "Necesidades de Partidas Auxiliares".
  * - [MEJORA] Filtrado robusto del nodo raíz en "Resumen por Capítulos" y "Presupuesto General" usando engine.rootCode.
  * - [VISUAL] Normalización estricta de formatos numéricos: Coma decimal y Punto de millares (es-ES).
+ * - [VISUAL] Textos largos sin cursiva y con mayor tamaño para mejor legibilidad.
  */
 
 const reports = {
@@ -271,7 +272,7 @@ const reports = {
                                 <td width="15%" class="${indentClass} font-mono font-bold">${concept.code}</td>
                                 <td width="70%">
                                     <span class="font-bold">${concept.summary}</span>
-                                    ${concept.description ? `<br><span class="text-xs italic">${reports.escapeHtml(concept.description).replace(/\n/g, '<br>')}</span>` : ''}
+                                    ${concept.description ? `<br><span style="font-size: 10px; font-style: normal; color: #334155;">${reports.escapeHtml(concept.description).replace(/\n/g, '<br>')}</span>` : ''}
                                 </td>
                                 <td width="15%" class="text-right font-bold bg-white" style="vertical-align: middle;">
                                     ${totalStr ? `<span class="header-total">${totalStr}</span>` : ''}
@@ -408,7 +409,8 @@ const reports = {
             
             if (!isChapter && concept.description) {
                 // Escapar HTML en la descripción para el presupuesto
-                descExtra = `<br><span class="text-xs italic" style="color:#666; font-weight:normal;">${reports.escapeHtml(concept.description).replace(/\n/g, ' ')}</span>`;
+                // [VISUAL] Texto descriptivo sin cursiva y tamaño estándar (10px)
+                descExtra = `<br><span style="font-size: 10px; font-style: normal; color:#334155; font-weight:normal;">${reports.escapeHtml(concept.description).replace(/\n/g, ' ')}</span>`;
             }
 
             content += `
@@ -1046,8 +1048,9 @@ const reports = {
                  let descriptionHtml = '';
                  if (parent.description && parent.description.trim().length > 0) {
                      const safeText = reports.escapeHtml(parent.description).replace(/\n/g, '<br>');
+                     // [VISUAL] Texto descriptivo sin cursiva y tamaño estándar (1em)
                      descriptionHtml = `
-                        <div style="padding: 10px 15px; background-color: #ffffff; border-bottom: 1px solid #cbd5e1; color: #475569; font-size: 0.9em; font-family: sans-serif; font-style: italic; margin-bottom: 5px;">
+                        <div style="padding: 10px 15px; background-color: #ffffff; border-bottom: 1px solid #cbd5e1; color: #475569; font-size: 1em; font-family: sans-serif; font-style: normal; margin-bottom: 5px;">
                             ${safeText}
                         </div>
                      `;
@@ -1139,8 +1142,9 @@ const reports = {
              let descriptionHtml = '';
              if (parent.description && parent.description.trim().length > 0) {
                  const safeText = reports.escapeHtml(parent.description).replace(/\n/g, '<br>');
+                 // [VISUAL] Texto descriptivo sin cursiva y tamaño estándar (1em)
                  descriptionHtml = `
-                    <div style="padding: 10px 15px; background-color: #ffffff; border-bottom: 1px solid #cbd5e1; color: #475569; font-size: 0.9em; font-family: sans-serif; font-style: italic; margin-bottom: 5px;">
+                    <div style="padding: 10px 15px; background-color: #ffffff; border-bottom: 1px solid #cbd5e1; color: #475569; font-size: 1em; font-family: sans-serif; font-style: normal; margin-bottom: 5px;">
                         ${safeText}
                     </div>
                  `;

@@ -352,3 +352,14 @@ Nueva mejora:
 Cuando abres un fichero bc3, quiero que almacenes en memoria el nombre. 
 Cuando lo guardes pon el mismo nombre y le añadas la fecha y hora al nombre, añadiendo la extensión bc3
 Si has creado un presupuesto nuevo, usa el nombre del concepto raiz ##, para ponerle nombre al fichero.
+
+---------
+PROMPT: botón de ayuda e imagen lince
+---------
+Puedes añadir una boton de "ayuda" que abra un formulario donde se explique que hace el programa. Crea un texto explicativo de cada función y tareas posibles a realizar por el programa.
+
+---------
+PROMPT: letra de texto largo mas grande y sin cursiva.
+---------
+
+Modifica los listado para que el texto largo lo muestre sin cursiva y con la letra un poco más grande.

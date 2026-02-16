@@ -1,19 +1,20 @@
 <!-- 
     PROYECTO: Visor Profesional FIEBDC-3 (BC3)
-    VERSION: 3.82 (Filename Management)
+    VERSION: 3.83 (Logo Update)
     DESCRIPCION: 
     - [MEJORA] Versión actualizada para reflejar cambios en app.js.
     - [MEJORA] Botón explícito "Acerca de..." en el pie de página.
     - [NUEVO] Ventana modal "Acerca de..." con información de autoría y licencia.
     - [NUEVO] Botón "Pegar Mediciones" desde portapapeles.
     - [NUEVO] Botones de "Copiar al portapapeles".
+    - [VISUAL] Actualización de imagen corporativa: Se usa lince.png en cabecera y modal "Acerca de".
 -->
 <!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Visor Profesional FIEBDC-3 (BC3) v3.82</title>
+    <title>Visor Profesional FIEBDC-3 (BC3) v3.83</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Estilos Personalizados -->
@@ -38,10 +39,9 @@
                 </svg>
             </button>
 
-            <div class="w-20 h-20 bg-blue-600 rounded-2xl mx-auto flex items-center justify-center shadow-lg mb-6 text-white">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-                </svg>
+            <!-- [CAMBIO] Imagen lince.png en lugar del SVG -->
+            <div class="w-24 h-24 bg-white rounded-2xl mx-auto flex items-center justify-center shadow-lg mb-6 border-4 border-blue-50 overflow-hidden">
+                <img src="lince.png" alt="Logotipo Lince" class="w-full h-full object-cover">
             </div>
 
             <h3 class="text-xl font-black text-slate-800 mb-1">BC3 Pro Analyzer</h3>
@@ -65,7 +65,118 @@
             </div>
 
             <div class="mt-8 text-[10px] text-slate-300">
-                Versión 3.82 Build 2024
+                Versión 3.83 Build 2024
+            </div>
+        </div>
+    </div>
+
+    <!-- [NUEVO] Modal de Ayuda -->
+    <div id="modal-help" class="modal-overlay" onclick="if(event.target === this) ui.closeHelpModal()">
+        <div class="bg-white rounded-xl shadow-2xl w-full max-w-4xl overflow-hidden transform transition-all scale-100 max-h-[90vh] flex flex-col">
+            <div class="px-6 py-4 bg-slate-50 border-b border-slate-100 flex justify-between items-center sticky top-0 z-10">
+                <h3 class="font-bold text-slate-700 flex items-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    Manual de Ayuda y Funciones
+                </h3>
+                <button onclick="ui.closeHelpModal()" class="text-slate-400 hover:text-red-500 transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+            
+            <div class="p-8 overflow-y-auto leading-relaxed text-slate-600 space-y-8">
+                
+                <!-- Sección 1: Gestión -->
+                <section>
+                    <h4 class="text-lg font-bold text-slate-800 mb-3 border-b pb-1 border-slate-200 flex items-center gap-2">
+                        <span class="bg-blue-100 text-blue-600 p-1 rounded">📂</span> Gestión de Proyectos
+                    </h4>
+                    <ul class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                        <li class="bg-slate-50 p-3 rounded border border-slate-100">
+                            <strong class="text-slate-800 block mb-1">Nuevo Proyecto</strong>
+                            Crea una estructura vacía (Raíz) lista para empezar a introducir capítulos y partidas desde cero.
+                        </li>
+                        <li class="bg-slate-50 p-3 rounded border border-slate-100">
+                            <strong class="text-slate-800 block mb-1">Abrir (Reemplazar)</strong>
+                            Carga un archivo <code>.bc3</code> o <code>.txt</code> desde su equipo. <span class="text-red-400 text-xs font-bold block mt-1">⚠️ Reemplaza el proyecto actual.</span>
+                        </li>
+                        <li class="bg-slate-50 p-3 rounded border border-slate-100">
+                            <strong class="text-slate-800 block mb-1">Importar (Fusionar)</strong>
+                            Añade el contenido de un archivo externo al proyecto actual. Útil para copiar partidas de otras bases de precios.
+                        </li>
+                        <li class="bg-slate-50 p-3 rounded border border-slate-100">
+                            <strong class="text-slate-800 block mb-1">Guardar</strong>
+                            Descarga el proyecto actual en formato estándar FIEBDC-3 (.bc3). El nombre del archivo se genera automáticamente con fecha y hora.
+                        </li>
+                    </ul>
+                </section>
+
+                <!-- Sección 2: Navegación y Edición -->
+                <section>
+                    <h4 class="text-lg font-bold text-slate-800 mb-3 border-b pb-1 border-slate-200 flex items-center gap-2">
+                        <span class="bg-emerald-100 text-emerald-600 p-1 rounded">✏️</span> Edición y Navegación
+                    </h4>
+                    <div class="space-y-4 text-sm">
+                        <div>
+                            <strong class="text-slate-800">Árbol de Navegación:</strong>
+                            Panel izquierdo. Haga clic en una carpeta o partida para ver su detalle. Use las flechas para expandir/colapsar niveles.
+                        </div>
+                        <div>
+                            <strong class="text-slate-800">Modificación de Datos:</strong>
+                            <ul class="list-disc list-inside pl-2 mt-1 space-y-1">
+                                <li><strong>Resumen:</strong> Haga clic en el icono de lápiz junto al título principal para editar el nombre corto.</li>
+                                <li><strong>Texto Largo:</strong> Use el botón "+ Añadir Texto" o el icono de edición en la sección inferior derecha.</li>
+                                <li><strong>Precios:</strong> En partidas simples (sin hijos), puede editar el precio directamente. En compuestas, el precio se calcula sumando sus componentes.</li>
+                            </ul>
+                        </div>
+                        <div>
+                            <strong class="text-slate-800">Copiar y Pegar:</strong>
+                            Use los botones de copia <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 inline text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" /></svg> para llevar tablas de descomposición o mediciones al portapapeles (compatible con Excel).
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Sección 3: Mediciones -->
+                <section>
+                    <h4 class="text-lg font-bold text-slate-800 mb-3 border-b pb-1 border-slate-200 flex items-center gap-2">
+                        <span class="bg-purple-100 text-purple-600 p-1 rounded">📐</span> Mediciones Detalladas
+                    </h4>
+                    <p class="text-sm mb-3">El sistema admite líneas de medición con lógica de cálculo:</p>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
+                        <div class="p-2 border rounded bg-white">
+                            <span class="font-bold text-blue-600 block">Línea Normal</span>
+                            Introduce Unidades (N), Largo (L), Ancho (A) y Alto (H). El parcial es el producto.
+                        </div>
+                        <div class="p-2 border rounded bg-white">
+                            <span class="font-bold text-purple-600 block">Fórmulas (Tipo 3)</span>
+                            Escriba una fórmula en "Comentario". Use <code>a</code> (N), <code>b</code> (L), <code>c</code> (A), <code>d</code> (H) como variables. Ej: <code>a*b*3.14</code>.
+                        </div>
+                        <div class="p-2 border rounded bg-white">
+                            <span class="font-bold text-slate-600 block">Subtotales</span>
+                            Use Tipo 1 para subtotal parcial (resetea cuenta) o Tipo 2 para acumulado global.
+                        </div>
+                    </div>
+                </section>
+                
+                 <!-- Sección 4: Informes -->
+                 <section>
+                    <h4 class="text-lg font-bold text-slate-800 mb-3 border-b pb-1 border-slate-200 flex items-center gap-2">
+                        <span class="bg-orange-100 text-orange-600 p-1 rounded">🖨️</span> Generación de Informes
+                    </h4>
+                    <p class="text-sm">
+                        Pulse el botón <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 inline text-purple-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg> <strong>Listados</strong> en la barra superior.
+                        Se abrirá el Centro de Informes donde podrá generar PDFs de Presupuestos, Cuadros de Precios, Necesidades de Recursos, etc.
+                    </p>
+                </section>
+            </div>
+            
+            <div class="px-6 py-4 bg-slate-50 text-right sticky bottom-0 border-t border-slate-100">
+                <button onclick="ui.closeHelpModal()" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg shadow font-bold transition-colors">
+                    Entendido
+                </button>
             </div>
         </div>
     </div>
@@ -394,10 +505,9 @@
     <!-- Cabecera -->
     <header class="bg-slate-900 text-white p-4 shadow-xl flex items-center justify-between h-16 relative z-50">
         <div class="flex items-center gap-3">
-            <div class="bg-blue-600 p-2 rounded-lg shadow-inner">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-                </svg>
+            <!-- [CAMBIO] Imagen lince.png en lugar del SVG -->
+            <div class="bg-blue-600 p-1 rounded-lg shadow-inner overflow-hidden flex items-center justify-center w-10 h-10">
+                <img src="lince.png" alt="Logo Lince" class="w-full h-full object-cover">
             </div>
             <div>
                 <h1 class="text-lg font-extrabold tracking-tight text-white">BC3 Pro Analyzer</h1>
@@ -641,6 +751,13 @@
                 <span class="w-2 h-2 rounded-full bg-blue-500 animate-pulse"></span>
                 Motor BC3 V3.81 - Profesional
             </div>
+            <!-- [CAMBIO] Botón Ayuda añadido -->
+            <button onclick="ui.openHelpModal()" class="flex items-center gap-1 bg-white hover:bg-blue-50 text-blue-600 hover:text-blue-700 px-3 py-1 rounded-full border border-blue-200 transition-colors shadow-sm font-bold">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                Ayuda
+            </button>
             <button onclick="ui.openAboutModal()" class="bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-slate-700 px-3 py-1 rounded border border-slate-200 transition-colors">
                 Acerca de...
             </button>

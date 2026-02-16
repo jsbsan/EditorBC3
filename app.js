@@ -643,7 +643,17 @@ const ui = {
         const modal = document.getElementById('modal-about');
         if (modal) modal.classList.remove('active');
     },
+    
+    // [NUEVO] Gestión del Modal de Ayuda
+    openHelpModal: () => {
+        const modal = document.getElementById('modal-help');
+        if (modal) modal.classList.add('active');
+    },
 
+    closeHelpModal: () => {
+        const modal = document.getElementById('modal-help');
+        if (modal) modal.classList.remove('active');
+    },
     createNewProject: () => {
         const name = prompt("Introduzca el nombre del nuevo proyecto (Raíz):", "NUEVO PROYECTO");
         if(name) {
