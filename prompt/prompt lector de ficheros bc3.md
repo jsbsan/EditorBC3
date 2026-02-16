@@ -363,3 +363,17 @@ PROMPT: letra de texto largo mas grande y sin cursiva.
 ---------
 
 Modifica los listado para que el texto largo lo muestre sin cursiva y con la letra un poco más grande.
+
+---------
+PROMPT: Redondeo y partes del reporte Cuadro de Precios nº 2
+---------
+Necesito que  explique como haces el "listado de cuadro de precios nº 2". No hagas nada, solo explicarmelo
+Quiero que modifiques el calculo del algoritmo de calculo en dos puntos: 
+Punto 1) Si el descompuesto contiene una partida auxiliar (tipo 0) que extraiga que parte es mano de obra, maquinaria y otro. Ademas multiplique cada cantidad por el rendimiento  mas 0.00001 redondeando a 2 decimales y lo sume a lo que le corresponda (al totalMO, totalMQ  y totalResto.  
+Punto 2) Redondear a 2 decimales el costes parcial añadiendole 0.0001 antes de redondear: Redondear( factor x rendimiento x precio de hijo +0.0001, 2 decimales)  
+
+
+
+
+
+

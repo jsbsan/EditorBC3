@@ -1,15 +1,11 @@
 /**
  * PROYECTO: Visor Profesional FIEBDC-3 (BC3)
  * MODULO: Generador de Listados Jerárquicos
- * VERSION: 3.84
+ * VERSION: 3.86 (Format Restoration)
  * DESCRIPCION: 
- * - [MEJORA] Listado "Necesidades": Explosión completa de insumos. No lista auxiliares, sino sus componentes básicos.
- * - [MEJORA] Listado de "Descompuestos" filtra partidas auxiliares.
- * - [MEJORA] Subtotales por naturaleza y Total General incluidos.
- * - [NUEVO] Listado de "Necesidades de Partidas Auxiliares".
- * - [MEJORA] Filtrado robusto del nodo raíz en "Resumen por Capítulos" y "Presupuesto General" usando engine.rootCode.
- * - [VISUAL] Normalización estricta de formatos numéricos: Coma decimal y Punto de millares (es-ES).
- * - [VISUAL] Textos largos sin cursiva y con mayor tamaño para mejor legibilidad.
+ * - [CORRECCION] Restaurado el formato legible del código (indentación y saltos de línea).
+ * - [LOGICA] Mantiene el algoritmo de cálculo modificado para CP2.
+ * - [VISUAL] Mantiene los estilos de texto mejorados (sin cursiva).
  */
 
 const reports = {
@@ -26,24 +22,21 @@ const reports = {
         document.getElementById('modal-reports').classList.remove('active');
     },
 
-    // [NUEVO] Formateador numérico estricto (Coma decimal, Punto millares)
+    // Formateador numérico estricto (Coma decimal, Punto millares)
     format: (val, type = 'DC') => {
         if (val === undefined || val === null || isNaN(val)) return '-';
-        // Obtener decimales según el tipo de metadato del motor (dn, dd, ds, dr, di, dp, dc, dm)
         const decimals = engine.metadata[type.toLowerCase()] || 2;
         return val.toLocaleString('es-ES', { 
             minimumFractionDigits: decimals, 
             maximumFractionDigits: decimals,
-            useGrouping: true // Forzar punto de miles
+            useGrouping: true 
         });
     },
 
-    // [NUEVO] Formateador de moneda estricto
     formatCurrency: (val, type = 'DC') => {
         return reports.format(val, type) + ' ' + engine.metadata.currency;
     },
 
-    // Helpers específicos (Mantenidos pero asegurando es-ES)
     fmtTwoDecimals: (val) => {
         if (val === undefined || val === null || isNaN(val)) return '-';
         return val.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2, useGrouping: true });
@@ -54,18 +47,10 @@ const reports = {
         return val.toLocaleString('es-ES', { minimumFractionDigits: 3, maximumFractionDigits: 3, useGrouping: true });
     },
 
-    // Función para escapar caracteres HTML y evitar roturas de código
     escapeHtml: (text) => {
         if (!text) return "";
         return text.replace(/[&<>"'`]/g, function(m) {
-            return {
-                '&': '&amp;',
-                '<': '&lt;',
-                '>': '&gt;',
-                '"': '&quot;',
-                "'": '&#039;',
-                '`': '&#96;'
-            }[m];
+            return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;', '`': '&#96;' }[m];
         });
     },
 
@@ -196,6 +181,26 @@ const reports = {
                         body { -webkit-print-color-adjust: exact; }
                         .no-break { page-break-inside: avoid; }
                     }
+
+                    /* CP2 Styles */
+                    .cp2-container { width: 100%; font-family: 'Arial', sans-serif; font-size: 11px; }
+                    .cp2-row { display: flex; margin-bottom: 25px; page-break-inside: avoid; border-bottom: 1px solid #eee; padding-bottom: 15px; }
+                    .cp2-col-idx { width: 40px; text-align: center; font-weight: bold; padding-top: 2px; }
+                    .cp2-col-code { width: 90px; font-weight: bold; font-family: 'Consolas', monospace; padding-top: 2px; }
+                    .cp2-col-unit { width: 40px; text-align: center; font-style: italic; padding-top: 2px; }
+                    .cp2-col-body { flex: 1; padding-left: 15px; }
+                    .cp2-desc { text-align: justify; margin-bottom: 15px; line-height: 1.5; color: #111; }
+                    
+                    .cp2-breakdown { width: 100%; max-width: 380px; margin-left: auto; font-size: 11px; }
+                    .cp2-line { display: flex; align-items: baseline; margin-bottom: 4px; }
+                    .cp2-label { flex: 0 0 auto; }
+                    /* Puntos suspensivos usando flex-grow y borde inferior */
+                    .cp2-dots { flex: 1 1 auto; border-bottom: 1px dotted #000; margin: 0 4px; position: relative; top: -4px; opacity: 0.5; }
+                    .cp2-val { flex: 0 0 auto; text-align: right; width: 70px; }
+                    
+                    .cp2-sep { border-top: 1px solid #000; margin-top: 5px; margin-bottom: 5px; margin-left: auto; width: 100%; }
+                    
+                    .cp2-total-line { margin-top: 5px; font-weight: bold; font-size: 12px; }
                 </style>
             </head>
             <body>
@@ -240,6 +245,36 @@ const reports = {
                 reports.traverseTree(child.code, code, level + 1, callback);
             });
         }
+    },
+
+    // --- HELPER PARA DESGLOSE RECURSIVO DE AUXILIARES (CP2) ---
+    getExplodedUnitCost: (code, visited = new Set()) => {
+        if (visited.has(code)) return { mo: 0, mq: 0, resto: 0 };
+        visited.add(code);
+
+        const concept = engine.resolveConcept(code);
+        if (!concept) return { mo: 0, mq: 0, resto: 0 };
+
+        // Si es hoja (no tiene hijos), clasificar directamente
+        if (!concept.children || concept.children.length === 0) {
+            if (concept.type === '1') return { mo: concept.price, mq: 0, resto: 0 };
+            if (concept.type === '2') return { mo: 0, mq: concept.price, resto: 0 };
+            return { mo: 0, mq: 0, resto: concept.price };
+        }
+
+        // Si tiene hijos, calcular suma ponderada de componentes
+        let mo = 0, mq = 0, resto = 0;
+        concept.children.forEach(child => {
+            const childQ = child.factor * child.yield;
+            // Llamada recursiva para obtener la composición unitaria del hijo
+            const childCosts = reports.getExplodedUnitCost(child.code, new Set(visited)); 
+            
+            mo += Math.round((childCosts.mo * childQ+0.0001)*100)/100;
+            mq += Math.round((childCosts.mq * childQ+0.0001)*100)/100;
+            resto += Math.round((childCosts.resto * childQ+0.0001)*100)/100;
+        });
+
+        return { mo, mq, resto };
     },
 
     // REPORTE 1: MEDICIONES
@@ -382,7 +417,7 @@ const reports = {
         `;
 
         const processNode = (concept, parentCode, level, isChapter) => {
-            // [MODIFICADO] Excluir raíz del listado (ya sea ## o el root detectado)
+            // Excluir raíz del listado
             if (concept.code === engine.rootCode) return;
 
             const indentClass = `indent-${Math.min(level, 5)}`;
@@ -408,8 +443,6 @@ const reports = {
             let descExtra = "";
             
             if (!isChapter && concept.description) {
-                // Escapar HTML en la descripción para el presupuesto
-                // [VISUAL] Texto descriptivo sin cursiva y tamaño estándar (10px)
                 descExtra = `<br><span style="font-size: 10px; font-style: normal; color:#334155; font-weight:normal;">${reports.escapeHtml(concept.description).replace(/\n/g, ' ')}</span>`;
             }
 
@@ -467,7 +500,7 @@ const reports = {
         const processNode = (concept, parentCode, level, isChapter) => {
             if (!isChapter) return;
             
-            // [MODIFICADO] Excluir raíz del listado
+            // Excluir raíz del listado
             if (concept.code === engine.rootCode) return;
 
             const indentClass = `indent-${Math.min(level, 5)}`;
@@ -541,7 +574,6 @@ const reports = {
             
             let itemText = "";
             if (concept.description) {
-                // Escapar HTML en la descripción
                 itemText = `<span style="font-weight:normal;">${reports.escapeHtml(concept.description).replace(/\n/g, '<br>')}</span>`;
             } else {
                 itemText = `<span>${concept.summary}</span>`;
@@ -577,7 +609,7 @@ const reports = {
         reports.printHTML(content, "Cuadro de Precios Nº 1");
     },
 
-    // REPORTE 5: CUADRO DE PRECIOS Nº 2
+    // REPORTE 5: CUADRO DE PRECIOS Nº 2 [CON NUEVO ALGORITMO]
     generatePriceTable2Report: () => {
         let content = `<h1>Cuadro de Precios Nº 2</h1>`;
         content += `<div class="meta">PROYECTO: ${engine.rootCode} | DIVISA: ${engine.metadata.currency}</div>`;
@@ -620,23 +652,39 @@ const reports = {
             let totalMQ = 0; 
             let totalResto = 0; 
 
+            // Redondeo estándar (2 decimales)
+            const round2 = (v) => Math.round(v * 100) / 100;
+
             if (concept.children && concept.children.length > 0) {
                 concept.children.forEach(child => {
                     const childConcept = engine.resolveConcept(child.code);
                     if (childConcept) {
-                        const cost = child.factor * child.yield * childConcept.price;
+                        const qty = round2((child.factor * child.yield)+0.0001);
                         const type = childConcept.type;
-                        
-                        if (type === '1') {
-                            totalMO += cost;
-                        } else if (type === '2') {
-                            totalMQ += cost;
-                        } else {
-                            totalResto += cost;
+
+                        // REGLA 1: Si es Auxiliar (Tipo 0) o tiene hijos, se desglosa recursivamente
+                        if (type === '0' || (childConcept.children && childConcept.children.length > 0)) {
+                            // Extraer composición unitaria (recursive)
+                            const breakdown = reports.getExplodedUnitCost(child.code);
+                            
+                            // Aplicar fórmula y acumular
+                            totalMO    += round2((breakdown.mo * qty) + 0.00001);
+                            totalMQ    += round2((breakdown.mq * qty) + 0.00001);
+                            totalResto += round2((breakdown.resto * qty) + 0.00001);
+
+                        } 
+                        // REGLA 2: Recurso Simple (Tipos 1, 2, 3)
+                        else {
+                            const lineCost = round2((qty * childConcept.price) + 0.0001);
+                            
+                            if (type === '1') totalMO += lineCost;
+                            else if (type === '2') totalMQ += lineCost;
+                            else totalResto += lineCost;
                         }
                     }
                 });
             } else {
+                // Caso extremo: Partida sin descomposición (precio directo)
                 if (concept.type === '1') totalMO = concept.price;
                 else if (concept.type === '2') totalMQ = concept.price;
                 else totalResto = concept.price;
@@ -695,7 +743,7 @@ const reports = {
         reports.printHTML(content, "Cuadro de Precios Nº 2");
     },
 
-    // --- NUEVOS LISTADOS DE ELEMENTALES ---
+    // --- LISTADOS DE ELEMENTALES ---
 
     generateBasicResourceReport: (type, typeName) => {
         let content = `<h1>Listado de ${typeName}</h1>`;
@@ -735,64 +783,47 @@ const reports = {
         reports.printHTML(content, `Listado de ${typeName}`);
     },
 
-    // Wrappers específicos
     generateLaborReport: () => reports.generateBasicResourceReport('1', 'Mano de Obra'),
     generateMachineryReport: () => reports.generateBasicResourceReport('2', 'Maquinaria'),
     generateMaterialsReport: () => reports.generateBasicResourceReport('3', 'Materiales'),
 
-    // --- LISTADO DE NECESIDADES [MODIFICADO: Sin Auxiliares] ---
+    // --- LISTADO DE NECESIDADES ---
     generateNeedsReport: () => {
         let content = `<h1>Listado de Necesidades</h1>`;
         content += `<div class="meta">PROYECTO: ${engine.rootCode} | DIVISA: ${engine.metadata.currency}</div>`;
 
-        // Map para agregar cantidades: code -> { concept, totalQty: 0 }
         const needsMap = new Map();
 
-        // Recursión unificada desde la raíz
         const calculateNeedsRecursively = (code, qtyMultiplier, visited) => {
             const concept = engine.resolveConcept(code);
             if (!concept) return;
-
-            // Evitar ciclos infinitos
             if (visited.has(code)) return;
 
             const hasChildren = concept.children && concept.children.length > 0;
 
-            // CONDICIÓN DE PARADA Y ACUMULACIÓN:
-            // 1. Si es elemental (sin hijos) se acumula.
-            // 2. Si tiene hijos (Auxiliar o Partida), se ignora y se profundiza.
             if (!hasChildren) {
                 if (!needsMap.has(code)) {
-                    needsMap.set(code, { 
-                        concept: concept, 
-                        totalQty: 0 
-                    });
+                    needsMap.set(code, { concept: concept, totalQty: 0 });
                 }
                 const entry = needsMap.get(code);
                 entry.totalQty += qtyMultiplier;
-                return; // Es hoja, retornamos
+                return; 
             }
 
-            // Si llegamos aquí, es un contenedor, partida o auxiliar. Explotamos hijos.
             const newVisited = new Set(visited);
             newVisited.add(code);
 
             concept.children.forEach(child => {
-                // child.yield contiene medición o rendimiento
                 const childTotalQty = qtyMultiplier * child.factor * child.yield;
                 calculateNeedsRecursively(child.code, childTotalQty, newVisited);
             });
         };
 
         if (engine.rootCode) {
-            // Iniciamos con 1 unidad del proyecto raíz
             calculateNeedsRecursively(engine.rootCode, 1, new Set());
         }
 
-        // Convertir a Array y Filtrar ceros
         const list = Array.from(needsMap.values()).filter(item => Math.abs(item.totalQty) > 0.0001);
-
-        // Ordenar: 1 (MO) -> 3 (MT) -> 2 (MQ) -> Otros
         const typeOrder = { '1': 1, '3': 2, '2': 3 };
         const getOrder = (type) => typeOrder[type] || 4;
 
@@ -803,7 +834,6 @@ const reports = {
             return a.concept.code.localeCompare(b.concept.code);
         });
 
-        // Generar Tabla HTML
         content += `
             <table>
                 <thead>
@@ -828,9 +858,7 @@ const reports = {
             const orderGroup = getOrder(item.concept.type);
             const totalCost = item.totalQty * item.concept.price;
             
-            // Cambio de grupo
             if (orderGroup !== currentTypeGroup) {
-                // Si había un grupo previo, imprimimos su subtotal
                 if (currentTypeGroup !== -1) {
                      content += `
                         <tr style="background-color: #f1f5f9; font-weight: bold; font-size: 10px; border-top: 1px solid #cbd5e1;">
@@ -850,7 +878,6 @@ const reports = {
                 `;
             }
 
-            // Acumular
             groupSubtotal += totalCost;
 
             content += `
@@ -865,7 +892,6 @@ const reports = {
             `;
         });
 
-        // Imprimir el subtotal del último grupo
         if (currentTypeGroup !== -1) {
              content += `
                 <tr style="background-color: #f1f5f9; font-weight: bold; font-size: 10px; border-top: 1px solid #cbd5e1;">
@@ -876,7 +902,6 @@ const reports = {
             grandTotal += groupSubtotal;
         }
 
-        // Fila Total General
         content += `
             <tr style="background-color: #1e3a8a; color: white; font-weight: bold; font-size: 12px; border-top: 3px double white;">
                 <td colspan="5" class="text-right" style="padding: 10px; text-transform: uppercase;">TOTAL NECESIDADES DE OBRA:</td>
@@ -888,38 +913,33 @@ const reports = {
         reports.printHTML(content, "Necesidades del Proyecto");
     },
 
-    // --- LISTADO DE NECESIDADES DE AUXILIARES [NUEVO] ---
+    // --- LISTADO DE NECESIDADES DE AUXILIARES ---
     generateAuxiliaryNeedsReport: () => {
         let content = `<h1>Necesidades de Partidas Auxiliares</h1>`;
         content += `<div class="meta">PROYECTO: ${engine.rootCode} | DIVISA: ${engine.metadata.currency}</div>`;
 
-        // 1. Identificar elementos de la jerarquía principal (para excluir Unitarios de Obra)
         const hierarchyMemberCodes = new Set();
-        // Incluir el root
         if(engine.rootCode) hierarchyMemberCodes.add(engine.rootCode);
         
         for (const [code, concept] of engine.db) {
-            if (code.endsWith('#')) { // Capítulos o Raíz
+            if (code.endsWith('#')) {
                 concept.children.forEach(child => {
                     hierarchyMemberCodes.add(child.code);
                 });
             }
         }
 
-        // 2. Calcular Necesidades Totales (Explosión)
-        const totalsMap = new Map(); // Code -> TotalQty
+        const totalsMap = new Map(); 
 
         const traverse = (code, qtyMultiplier, stack) => {
-            if (stack.has(code)) return; // Evitar ciclos
+            if (stack.has(code)) return; 
             
-            // Acumular cantidad
             const currentTotal = totalsMap.get(code) || 0;
             totalsMap.set(code, currentTotal + qtyMultiplier);
 
             const concept = engine.resolveConcept(code);
             if (!concept) return;
 
-            // Si tiene hijos, bajar
             if (concept.children && concept.children.length > 0) {
                 const newStack = new Set(stack);
                 newStack.add(code);
@@ -932,14 +952,9 @@ const reports = {
         };
 
         if (engine.rootCode) {
-            // Empezamos traversal, pero ojo:
-            // No queremos contar el root en el mapa de auxiliares, pero sí necesitamos atravesarlo.
-            // traverse acumula todo. Luego filtraremos.
             traverse(engine.rootCode, 1, new Set());
         }
 
-        // 3. Filtrar: Solo Auxiliares
-        // Definición Auxiliar: Tiene Hijos + NO es Capítulo (#) + NO es Jerarquía Directa
         const list = [];
         
         for (const [code, totalQty] of totalsMap) {
@@ -958,7 +973,6 @@ const reports = {
             }
         }
 
-        // 4. Ordenar y Generar HTML
         list.sort((a, b) => a.concept.code.localeCompare(b.concept.code));
 
         if (list.length === 0) {
@@ -1009,31 +1023,25 @@ const reports = {
         reports.printHTML(content, "Necesidades de Auxiliares");
     },
 
-    // --- LISTADO DE AUXILIARES [NUEVO] ---
+    // --- LISTADO DE AUXILIARES ---
     generateAuxiliaryReport: () => {
         let content = `<h1>Partidas de Precios Auxiliares</h1>`;
         content += `<div class="meta">PROYECTO: ${engine.rootCode} | DIVISA: ${engine.metadata.currency}</div>`;
 
-        // 1. Identificar elementos que cuelgan directamente del árbol principal (Raíz o Capítulos)
         const hierarchyMemberCodes = new Set();
         
         for (const [code, concept] of engine.db) {
-            // Se considera contenedor si termina en '#' (Capítulo/Subcapítulo/Raíz)
             if (code.endsWith('#')) {
                 concept.children.forEach(child => {
-                    // Guardamos el código exacto de la referencia del hijo
                     hierarchyMemberCodes.add(child.code);
                 });
             }
         }
 
-        // 2. Filtrar Auxiliares: Compuestos, No contenedores, No hijos directos de contenedores
         const auxiliaryItems = Array.from(engine.db.values())
             .filter(c => {
                 const isContainer = c.code.endsWith('#'); 
                 const hasChildren = c.children && c.children.length > 0;
-                // Verificamos si este código aparece como hijo directo de algún capítulo
-                // Nota: Usamos el código tal cual está en la DB
                 const isDirectHierarchy = hierarchyMemberCodes.has(c.code);
 
                 return hasChildren && !isContainer && !isDirectHierarchy;
@@ -1043,12 +1051,10 @@ const reports = {
         if (auxiliaryItems.length === 0) {
              content += `<p class="text-center italic" style="padding:20px;">No se encontraron partidas auxiliares.</p>`;
         } else {
-            // 3. Renderizar (Reutilizando estilo de Descompuestos)
             auxiliaryItems.forEach(parent => {
                  let descriptionHtml = '';
                  if (parent.description && parent.description.trim().length > 0) {
                      const safeText = reports.escapeHtml(parent.description).replace(/\n/g, '<br>');
-                     // [VISUAL] Texto descriptivo sin cursiva y tamaño estándar (1em)
                      descriptionHtml = `
                         <div style="padding: 10px 15px; background-color: #ffffff; border-bottom: 1px solid #cbd5e1; color: #475569; font-size: 1em; font-family: sans-serif; font-style: normal; margin-bottom: 5px;">
                             ${safeText}
@@ -1107,22 +1113,20 @@ const reports = {
         reports.printHTML(content, "Precios Auxiliares");
     },
 
-    // --- LISTADO DE DESCOMPUESTOS (JUSTIFICACIÓN DE PRECIOS) ---
+    // --- LISTADO DE DESCOMPUESTOS ---
     generateDecompositionReport: () => {
-        let content = `<h1>Descompuestos</h1>`; // [CAMBIO] Título cambiado de "Justificación de Precios" a "Descompuestos"
+        let content = `<h1>Descompuestos</h1>`; 
         content += `<div class="meta">PROYECTO: ${engine.rootCode} | DIVISA: ${engine.metadata.currency}</div>`;
         
-        // 1. Identificar qué conceptos cuelgan directamente de capítulos (Jerarquía Principal)
         const hierarchyMemberCodes = new Set();
         for (const [code, concept] of engine.db) {
-            if (code.endsWith('#')) { // Es un contenedor (Capítulo o Raíz)
+            if (code.endsWith('#')) { 
                 concept.children.forEach(child => {
                     hierarchyMemberCodes.add(child.code);
                 });
             }
         }
 
-        // 2. Filtrar: Complejos + No Capítulos + QUE ESTÉN en la jerarquía principal
         const complexItems = Array.from(engine.db.values())
             .filter(c => {
                 const isContainer = c.code.endsWith('#');
@@ -1138,11 +1142,9 @@ const reports = {
         }
 
         complexItems.forEach(parent => {
-             // [CORRECCIÓN] Renderizado seguro idéntico a Mediciones (replace \n por <br>)
              let descriptionHtml = '';
              if (parent.description && parent.description.trim().length > 0) {
                  const safeText = reports.escapeHtml(parent.description).replace(/\n/g, '<br>');
-                 // [VISUAL] Texto descriptivo sin cursiva y tamaño estándar (1em)
                  descriptionHtml = `
                     <div style="padding: 10px 15px; background-color: #ffffff; border-bottom: 1px solid #cbd5e1; color: #475569; font-size: 1em; font-family: sans-serif; font-style: normal; margin-bottom: 5px;">
                         ${safeText}
@@ -1178,7 +1180,6 @@ const reports = {
             
             parent.children.forEach(child => {
                 const childConcept = engine.resolveConcept(child.code);
-                // Calcular coste parcial: factor * rendimiento * precio_unitario
                 const quantity = child.factor * child.yield;
                 const unitPrice = childConcept ? childConcept.price : 0;
                 const cost = quantity * unitPrice;
@@ -1198,6 +1199,6 @@ const reports = {
             content += `</tbody></table></div>`;
         });
 
-        reports.printHTML(content, "Descompuestos"); // [CAMBIO] Título de ventana de impresión actualizado a "Descompuestos"
+        reports.printHTML(content, "Descompuestos");
     }
 };
