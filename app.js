@@ -1,12 +1,13 @@
 /**
  * PROYECTO: Visor Profesional FIEBDC-3 (BC3)
- * VERSION: 3.82 (Filename Management)
+ * VERSION: 3.85 (Macros Logic Fix)
  * DESCRIPCION: 
  * - [MEJORA] Gestión inteligente de nombres de archivo al Guardar.
  * - [LOGICA] Al abrir, se conserva el nombre original.
  * - [LOGICA] Al guardar, se usa el nombre original (o el de la raíz si es nuevo) + Fecha/Hora.
  * - [NUEVO] Funciones para gestionar el modal "Acerca de".
  * - [NUEVO] Funcionalidad pasteMeasurements.
+ * - [CORRECCION] Macro applyIndirectCosts ahora excluye partidas auxiliares.
  */
 
 class BC3Engine {
@@ -544,6 +545,68 @@ class BC3Engine {
         }
     }
 
+    // --- NUEVO: MACRO PARA APLICAR COSTES INDIRECTOS ---
+    applyIndirectCosts(percentageVal) {
+        if (!this.rootCode) return 0;
+
+        // 1. Asegurar que existe el concepto %CI
+        const ciCode = '%CI';
+        if (!this.db.has(ciCode)) {
+            this.db.set(ciCode, {
+                code: ciCode,
+                unit: '%',
+                summary: 'Costes Indirectos',
+                price: percentageVal,
+                type: '0', 
+                description: 'Porcentaje de Costes Indirectos aplicados a la ejecución material.',
+                children: []
+            });
+        } else {
+            // Actualizar precio si ya existe
+            const ciConcept = this.db.get(ciCode);
+            ciConcept.price = percentageVal;
+        }
+
+        // 2. Identificar partidas de la jerarquía principal (direct children of chapters)
+        const hierarchyMemberCodes = new Set();
+        for (const [code, concept] of this.db) {
+            if (code.endsWith('#')) { // Chapters and Root often end in #
+                concept.children.forEach(child => {
+                    hierarchyMemberCodes.add(child.code);
+                });
+            }
+        }
+
+        let modifiedCount = 0;
+
+        // 3. Iterar sobre todos los conceptos de la BD
+        for (const [code, concept] of this.db) {
+            // Filtrar: No Raíz (##), No Capítulo (#)
+            if (code.endsWith('##') || code.endsWith('#')) continue;
+
+            // Filtrar: Solo partidas con descomposición (hijos > 0)
+            if (!concept.children || concept.children.length === 0) continue;
+
+            // Filtrar: Debe pertenecer a la jerarquía principal (Partida de Obra)
+            // Si no está en hierarchyMemberCodes, se considera auxiliar o descomposición de otro nivel
+            if (!hierarchyMemberCodes.has(code)) continue;
+            
+            // Verificar si ya tiene el %CI añadido
+            const hasCI = concept.children.some(child => child.code === ciCode);
+            
+            if (!hasCI) {
+                concept.children.push({
+                    code: ciCode,
+                    factor: 1,
+                    yield: 0 // Se calculará dinámicamente en calculateConceptPriceRecursively
+                });
+                modifiedCount++;
+            }
+        }
+
+        return modifiedCount;
+    }
+
     exportToBC3() {
         const lines = [];
         
@@ -654,6 +717,65 @@ const ui = {
         const modal = document.getElementById('modal-help');
         if (modal) modal.classList.remove('active');
     },
+
+    // [NUEVO] Gestión del Modal de Macros
+    openMacrosModal: () => {
+        if (!engine.rootCode) {
+            alert("No hay ningún proyecto cargado.");
+            return;
+        }
+        const modal = document.getElementById('modal-macros');
+        if (modal) modal.classList.add('active');
+    },
+
+    closeMacrosModal: () => {
+        const modal = document.getElementById('modal-macros');
+        if (modal) modal.classList.remove('active');
+    },
+
+    // [NUEVO] Ejecutar Macro de Costes Indirectos
+    runMacroCI: () => {
+        ui.closeMacrosModal();
+        
+        // 1. Pedir valor al usuario
+        const input = prompt("Introduzca el porcentaje de Costes Indirectos a aplicar (ej: 13 para un 13%):", "13");
+        
+        if (input === null) return; // Cancelado por usuario
+        
+        const val = parseFloat(input.replace(',', '.'));
+        if (isNaN(val) || val < 0) {
+            alert("Por favor, introduzca un número válido.");
+            return;
+        }
+
+        // 2. Ejecutar lógica en Engine
+        const loader = document.getElementById('loader');
+        const loaderText = document.getElementById('loader-text');
+        
+        if (loaderText) loaderText.textContent = "Aplicando Costes Indirectos...";
+        if (loader) loader.style.display = 'flex';
+
+        setTimeout(() => {
+            try {
+                const affectedCount = engine.applyIndirectCosts(val);
+                
+                // 3. Recalcular todo el proyecto
+                engine.recalculateProject();
+                renderAll(false); // Refrescar UI sin perder foco si es posible
+
+                // 4. Feedback
+                ui.showToast(`Macro finalizada. Se añadieron CI a ${affectedCount} partidas.`);
+                
+            } catch (e) {
+                console.error(e);
+                alert("Error ejecutando la macro: " + e.message);
+            } finally {
+                if (loader) loader.style.display = 'none';
+                if (loaderText) loaderText.textContent = "Procesando...";
+            }
+        }, 50);
+    },
+
     createNewProject: () => {
         const name = prompt("Introduzca el nombre del nuevo proyecto (Raíz):", "NUEVO PROYECTO");
         if(name) {

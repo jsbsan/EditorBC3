@@ -1,24 +1,112 @@
 <!-- 
     PROYECTO: Visor Profesional FIEBDC-3 (BC3)
-    VERSION: 3.83 (Logo Update)
+    VERSION: 3.84 (Macros Update)
     DESCRIPCION: 
-    - [MEJORA] Versión actualizada para reflejar cambios en app.js.
-    - [MEJORA] Botón explícito "Acerca de..." en el pie de página.
-    - [NUEVO] Ventana modal "Acerca de..." con información de autoría y licencia.
-    - [NUEVO] Botón "Pegar Mediciones" desde portapapeles.
-    - [NUEVO] Botones de "Copiar al portapapeles".
-    - [VISUAL] Actualización de imagen corporativa: Se usa lince.png en cabecera y modal "Acerca de".
+    - [NUEVO] Botón "Macros" en la barra superior.
+    - [NUEVO] Modal de Macros con la función "Añadir %CI".
+    - [LOGICA] Integración con las nuevas funciones de app.js para gestión de costes indirectos.
 -->
 <!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Visor Profesional FIEBDC-3 (BC3) v3.83</title>
+    <title>Visor Profesional FIEBDC-3 (BC3) v3.84</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Estilos Personalizados -->
-    <link rel="stylesheet" href="style.css">
+    <style>
+        /* PROYECTO: Visor Profesional FIEBDC-3 (BC3)
+            VERSION: 3.26
+            DESCRIPCION: Hoja de estilos principal con Tailwind CSS y ajustes personalizados.
+        */
+
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f1f5f9;
+        }
+
+        /* Estilos de barra de desplazamiento */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: #f1f1f1; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+
+        /* [MEJORA] Aumentamos especificidad para eliminar !important */
+        #tree-container .tree-node-selected {
+            background-color: #dbeafe;
+            border-left: 4px solid #2563eb;
+        }
+
+        #list-container .list-item-selected {
+            background-color: #dbeafe;
+            border-left: 4px solid #2563eb;
+        }
+
+        .table-sticky thead th {
+            position: sticky;
+            top: 0;
+            background: #f8fafc;
+            z-index: 10;
+        }
+
+        .loading-overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(255,255,255,0.9);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* Modal Overlay (Solo para Reportes ahora) */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(15, 23, 42, 0.6);
+            z-index: 2000;
+            align-items: center;
+            justify-content: center;
+            backdrop-filter: blur(2px);
+        }
+        .modal-overlay.active { display: flex; }
+
+        .chapter-line {
+            border-left: 1px dashed #cbd5e1;
+            margin-left: 0.75rem;
+        }
+
+        /* Estilos para la tabla de mediciones detallada */
+        .meas-table th { font-size: 10px; text-transform: uppercase; color: #64748b; padding: 6px 4px; }
+        .meas-table td { padding: 4px 4px; border-bottom: 1px solid #f1f5f9; }
+        .meas-table input { width: 100%; background: transparent; border: none; font-family: monospace; text-align: right; }
+
+        /* --- NUEVO: Estilos para Ventana Flotante --- */
+        .floating-window {
+            position: absolute;
+            /* top y left se manejan inline o JS */
+            z-index: 900; 
+            resize: both; 
+            overflow: hidden; /* Ajuste para bordes redondeados */
+            min-width: 250px;
+            min-height: 200px;
+            box-shadow: 0 15px 35px -5px rgba(0, 0, 0, 0.2), 0 10px 10px -5px rgba(0, 0, 0, 0.1); /* Sombra más pronunciada */
+        }
+
+        /* Specific styling for the Edit Window (Modeless) */
+        #edit-window {
+            z-index: 1100; /* Higher than search list */
+            resize: vertical; /* Only vertical resize makes sense for forms */
+        }
+
+        .drag-handle {
+            cursor: move;
+        }
+    </style>
 </head>
 <body class="overflow-hidden bg-slate-100">
 
@@ -41,7 +129,7 @@
 
             <!-- [CAMBIO] Imagen lince.png en lugar del SVG -->
             <div class="w-24 h-24 bg-white rounded-2xl mx-auto flex items-center justify-center shadow-lg mb-6 border-4 border-blue-50 overflow-hidden">
-                <img src="lince.png" alt="Logotipo Lince" class="w-full h-full object-cover">
+                <img src="lince.png" alt="Logotipo Lince" class="w-full h-full object-cover" onerror="this.src='data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjM2I4MmY2IiBzdHJva2Utd2lkdGg9IjIiPjxwYXRoIGQ9Ik0xMiA0djE2bTgtOGgtMTYiLz48L3N2Zz4='">
             </div>
 
             <h3 class="text-xl font-black text-slate-800 mb-1">BC3 Pro Analyzer</h3>
@@ -65,12 +153,56 @@
             </div>
 
             <div class="mt-8 text-[10px] text-slate-300">
-                Versión 3.83 Build 2024
+                Versión 3.84 Build 2025
             </div>
         </div>
     </div>
 
-    <!-- [NUEVO] Modal de Ayuda -->
+    <!-- [NUEVO] Modal de Macros -->
+    <div id="modal-macros" class="modal-overlay" onclick="if(event.target === this) ui.closeMacrosModal()">
+        <div class="bg-white rounded-xl shadow-2xl w-full max-w-lg overflow-hidden transform transition-all scale-100">
+            <div class="px-6 py-4 bg-slate-50 border-b border-slate-100 flex justify-between items-center">
+                <h3 class="font-bold text-slate-700 flex items-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-yellow-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                    </svg>
+                    Macros y Automatización
+                </h3>
+                <button onclick="ui.closeMacrosModal()" class="text-slate-400 hover:text-red-500 transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+            
+            <div class="p-6 space-y-4">
+                <p class="text-sm text-slate-500 mb-4">Seleccione una macro para ejecutar sobre el proyecto actual. <span class="font-bold text-red-400">Estas acciones modifican la base de datos.</span></p>
+
+                <!-- Macro 1: Añadir CI -->
+                <button onclick="ui.runMacroCI()" class="w-full flex items-center gap-4 p-4 border border-slate-200 rounded-xl hover:bg-yellow-50 hover:border-yellow-300 hover:shadow-md transition-all group text-left">
+                    <div class="bg-yellow-100 p-3 rounded-lg group-hover:bg-yellow-200 transition-colors">
+                        <span class="text-lg font-bold text-yellow-700">%</span>
+                    </div>
+                    <div>
+                        <h4 class="font-bold text-slate-700 text-sm">Añadir % Costes Indirectos</h4>
+                        <p class="text-[10px] text-slate-500">Inserta el concepto %CI en todas las partidas descompuestas del presupuesto.</p>
+                    </div>
+                    <div class="ml-auto text-slate-300 group-hover:text-yellow-600">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                        </svg>
+                    </div>
+                </button>
+
+                <!-- Espacio para futuras macros -->
+                <div class="border-t border-dashed border-slate-200 pt-4 text-center">
+                    <p class="text-[10px] text-slate-300 italic">Más macros próximamente...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- [NUEVO] Modal de Ayuda (Mantenido) -->
     <div id="modal-help" class="modal-overlay" onclick="if(event.target === this) ui.closeHelpModal()">
         <div class="bg-white rounded-xl shadow-2xl w-full max-w-4xl overflow-hidden transform transition-all scale-100 max-h-[90vh] flex flex-col">
             <div class="px-6 py-4 bg-slate-50 border-b border-slate-100 flex justify-between items-center sticky top-0 z-10">
@@ -101,7 +233,7 @@
                         </li>
                         <li class="bg-slate-50 p-3 rounded border border-slate-100">
                             <strong class="text-slate-800 block mb-1">Abrir (Reemplazar)</strong>
-                            Carga un archivo <code>.bc3</code> o <code>.txt</code> desde su equipo. <span class="text-red-400 text-xs font-bold block mt-1">⚠️ Reemplaza el proyecto actual.</span>
+                            Carga un archivo <code>.bc3</code> desde su equipo. <span class="text-red-400 text-xs font-bold block mt-1">⚠️ Reemplaza el proyecto actual.</span>
                         </li>
                         <li class="bg-slate-50 p-3 rounded border border-slate-100">
                             <strong class="text-slate-800 block mb-1">Importar (Fusionar)</strong>
@@ -557,6 +689,13 @@
             <button onclick="ui.saveFile()" class="text-blue-200 hover:text-white px-2 transition-colors" title="Guardar BC3">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" />
+                </svg>
+            </button>
+
+            <!-- [NUEVO] Botón Macros -->
+            <button onclick="ui.openMacrosModal()" class="text-yellow-400 hover:text-white px-2 transition-colors" title="Macros y Automatización">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
                 </svg>
             </button>
 

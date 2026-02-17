@@ -374,6 +374,9 @@ Punto 2) Redondear a 2 decimales el costes parcial añadiendole 0.0001 antes de 
 
 
 
-
-
-
+---------
+PROMPT: MACROS
+---------
+Vamos a añadir una nueva opción llamada "Macros" EN LA BARRA SUPERIOR, cuando pulses sobre el abriras un formulario modal. En este formulario vamos a añadir varias macros
+La primera macro se llama "Añadir %CI a todos los descompuestos", si pulsas sobre ella, preguntas por el coeficiente de costes indirectos al usuario y añade a todos las partidas con descompuestos (que no sean partidas auxiliares ni capitulo "#" ni raiz "##"), un concepto del tipo "%", con codigo "%CI", y con precio el indicado por el usuario.
+Modificar la lógica de "applyIndirectCosts" no debe inyectar a las partidas auxiliares el concepto %CI
