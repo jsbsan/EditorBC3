@@ -1,6 +1,6 @@
 /**
  * PROYECTO: Visor Profesional FIEBDC-3 (BC3)
- * VERSION: 3.85 (Macros Logic Fix)
+ * VERSION: 3.86 (Macros Buscar y Reemplazar)
  * DESCRIPCION: 
  * - [MEJORA] Gestión inteligente de nombres de archivo al Guardar.
  * - [LOGICA] Al abrir, se conserva el nombre original.
@@ -8,6 +8,7 @@
  * - [NUEVO] Funciones para gestionar el modal "Acerca de".
  * - [NUEVO] Funcionalidad pasteMeasurements.
  * - [CORRECCION] Macro applyIndirectCosts ahora excluye partidas auxiliares.
+ * - [NUEVO] Macro replaceTextInDescriptions para buscar y reemplazar en pliegos.
  */
 
 class BC3Engine {
@@ -607,6 +608,22 @@ class BC3Engine {
         return modifiedCount;
     }
 
+    // --- NUEVO: MACRO BUSCAR Y REEMPLAZAR EN PLIEGOS ---
+    replaceTextInDescriptions(searchText, replaceText) {
+        if (!searchText) return 0;
+        let modifiedCount = 0;
+        
+        for (const [code, concept] of this.db) {
+            if (concept.description && concept.description.includes(searchText)) {
+                // Usamos split y join para reemplazar todas las ocurrencias sin problemas de inyección regex
+                concept.description = concept.description.split(searchText).join(replaceText);
+                modifiedCount++;
+            }
+        }
+        
+        return modifiedCount;
+    }
+
     exportToBC3() {
         const lines = [];
         
@@ -765,6 +782,44 @@ const ui = {
 
                 // 4. Feedback
                 ui.showToast(`Macro finalizada. Se añadieron CI a ${affectedCount} partidas.`);
+                
+            } catch (e) {
+                console.error(e);
+                alert("Error ejecutando la macro: " + e.message);
+            } finally {
+                if (loader) loader.style.display = 'none';
+                if (loaderText) loaderText.textContent = "Procesando...";
+            }
+        }, 50);
+    },
+
+    // [NUEVO] Macro Buscar y Reemplazar Textos
+    runMacroReplaceText: () => {
+        ui.closeMacrosModal();
+        
+        const searchText = prompt("Introduzca el texto exacto que desea buscar en los pliegos (textos largos):");
+        if (!searchText) return; // Cancelado o vacío
+        
+        const replaceText = prompt("Texto encontrado será reemplazado por:\n(Deje en blanco para simplemente eliminar el texto buscado)");
+        if (replaceText === null) return; // Cancelado
+        
+        const loader = document.getElementById('loader');
+        const loaderText = document.getElementById('loader-text');
+        
+        if (loaderText) loaderText.textContent = "Reemplazando textos...";
+        if (loader) loader.style.display = 'flex';
+
+        setTimeout(() => {
+            try {
+                const affectedCount = engine.replaceTextInDescriptions(searchText, replaceText);
+                
+                // Refrescar la vista por si el texto afectado era del nodo seleccionado actualmente
+                if (ui.currentNode) {
+                    selectNode(ui.currentNode.code, null);
+                }
+
+                // Feedback
+                ui.showToast(`Macro finalizada. Textos modificados en ${affectedCount} conceptos.`);
                 
             } catch (e) {
                 console.error(e);

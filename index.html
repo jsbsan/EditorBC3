@@ -1,17 +1,17 @@
 <!-- 
     PROYECTO: Visor Profesional FIEBDC-3 (BC3)
-    VERSION: 3.84 (Macros Update)
+    VERSION: 3.86 (Macros Update & Missing Texts Report)
     DESCRIPCION: 
     - [NUEVO] Botón "Macros" en la barra superior.
-    - [NUEVO] Modal de Macros con la función "Añadir %CI".
-    - [LOGICA] Integración con las nuevas funciones de app.js para gestión de costes indirectos.
+    - [NUEVO] Modal de Macros con las funciones "Añadir %CI", "Buscar y Reemplazar" e "Informe sin pliegos".
+    - [LOGICA] Integración con las nuevas funciones de app.js y reports.js para gestión de costes indirectos y edición en masa.
 -->
 <!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Visor Profesional FIEBDC-3 (BC3) v3.84</title>
+    <title>Visor Profesional FIEBDC-3 (BC3) v3.86</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Estilos Personalizados -->
@@ -153,7 +153,7 @@
             </div>
 
             <div class="mt-8 text-[10px] text-slate-300">
-                Versión 3.84 Build 2025
+                Versión 3.86 Build 2026
             </div>
         </div>
     </div>
@@ -194,8 +194,44 @@
                     </div>
                 </button>
 
+                <!-- Macro 2: Buscar y Reemplazar Textos -->
+                <button onclick="ui.runMacroReplaceText()" class="w-full flex items-center gap-4 p-4 border border-slate-200 rounded-xl hover:bg-blue-50 hover:border-blue-300 hover:shadow-md transition-all group text-left mt-3">
+                    <div class="bg-blue-100 p-3 rounded-lg group-hover:bg-blue-200 transition-colors">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16l2.879-2.879m0 0a3 3 0 104.243-4.242 3 3 0 00-4.243 4.242zM21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                    </div>
+                    <div>
+                        <h4 class="font-bold text-slate-700 text-sm">Buscar y Reemplazar Textos</h4>
+                        <p class="text-[10px] text-slate-500">Busca una cadena de texto en todos los pliegos (textos largos) y la reemplaza por otra.</p>
+                    </div>
+                    <div class="ml-auto text-slate-300 group-hover:text-blue-600">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                        </svg>
+                    </div>
+                </button>
+
+                <!-- Macro 3: Informar sobre descompuestos sin textos largos -->
+                <button onclick="ui.closeMacrosModal(); reports.generateMissingTextReport();" class="w-full flex items-center gap-4 p-4 border border-slate-200 rounded-xl hover:bg-purple-50 hover:border-purple-300 hover:shadow-md transition-all group text-left mt-3">
+                    <div class="bg-purple-100 p-3 rounded-lg group-hover:bg-purple-200 transition-colors">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-purple-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                        </svg>
+                    </div>
+                    <div>
+                        <h4 class="font-bold text-slate-700 text-sm">Informar sobre descompuestos sin textos largos</h4>
+                        <p class="text-[10px] text-slate-500">Genera un informe con las partidas descompuestas que no tienen pliego.</p>
+                    </div>
+                    <div class="ml-auto text-slate-300 group-hover:text-purple-600">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                        </svg>
+                    </div>
+                </button>
+
                 <!-- Espacio para futuras macros -->
-                <div class="border-t border-dashed border-slate-200 pt-4 text-center">
+                <div class="border-t border-dashed border-slate-200 pt-4 text-center mt-4">
                     <p class="text-[10px] text-slate-300 italic">Más macros próximamente...</p>
                 </div>
             </div>
@@ -466,7 +502,7 @@
                     <button onclick="reports.generateDecompositionReport()" class="flex items-center gap-4 p-4 border border-slate-200 rounded-xl hover:bg-indigo-50 hover:border-indigo-300 transition-all group text-left w-full h-full">
                         <div class="bg-indigo-100 p-2 rounded-lg group-hover:bg-indigo-200 transition-colors">
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
                             </svg>
                         </div>
                         <div>
@@ -637,7 +673,6 @@
     <!-- Cabecera -->
     <header class="bg-slate-900 text-white p-4 shadow-xl flex items-center justify-between h-16 relative z-50">
         <div class="flex items-center gap-3">
-            <!-- [CAMBIO] Imagen lince.png en lugar del SVG -->
             <div class="bg-blue-600 p-1 rounded-lg shadow-inner overflow-hidden flex items-center justify-center w-10 h-10">
                 <img src="lince.png" alt="Logo Lince" class="w-full h-full object-cover">
             </div>
@@ -777,7 +812,7 @@
                             <!-- [NUEVO] Botón Copiar Tabla -->
                             <button onclick="ui.copyDecomposition()" id="btn-copy-decomp" class="text-slate-400 hover:text-blue-600 p-1 rounded hover:bg-slate-100 transition-colors" title="Copiar al portapapeles">
                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" />
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" />
                                 </svg>
                             </button>
                             <button onclick="ui.openAddDecomp()" class="text-slate-400 hover:text-green-600 p-1 rounded hover:bg-slate-100 transition-colors">

@@ -1,11 +1,12 @@
 /**
  * PROYECTO: Visor Profesional FIEBDC-3 (BC3)
  * MODULO: Generador de Listados Jerárquicos
- * VERSION: 3.86 (Format Restoration)
+ * VERSION: 3.86 (Format Restoration & Macros)
  * DESCRIPCION: 
  * - [CORRECCION] Restaurado el formato legible del código (indentación y saltos de línea).
  * - [LOGICA] Mantiene el algoritmo de cálculo modificado para CP2.
  * - [VISUAL] Mantiene los estilos de texto mejorados (sin cursiva).
+ * - [NUEVO] Macro generateMissingTextReport añadida.
  */
 
 const reports = {
@@ -1200,5 +1201,52 @@ const reports = {
         });
 
         reports.printHTML(content, "Descompuestos");
+    },
+
+    // --- MACRO: INFORME DE DESCOMPUESTOS SIN TEXTO LARGO ---
+    generateMissingTextReport: () => {
+        let content = `<h1>Partidas Descompuestas sin Texto Largo</h1>`; 
+        content += `<div class="meta">PROYECTO: ${engine.rootCode} | DIVISA: ${engine.metadata.currency}</div>`;
+        
+        const missingTextItems = Array.from(engine.db.values())
+            .filter(c => {
+                // Descartar contenedores (Capítulos y Raíz)
+                const isContainer = c.code.endsWith('#') || c.code.endsWith('##') || c.code === engine.rootCode;
+                // Partida descompuesta = tiene hijos
+                const hasChildren = c.children && c.children.length > 0;
+                // No tiene texto largo
+                const hasNoText = !c.description || c.description.trim() === '';
+                
+                return hasChildren && !isContainer && hasNoText;
+            })
+            .sort((a, b) => a.code.localeCompare(b.code));
+
+        if (missingTextItems.length === 0) {
+            content += `<p class="text-center italic" style="padding:20px;">No se encontraron partidas descompuestas sin texto largo.</p>`;
+        } else {
+            content += `
+                <table>
+                    <thead>
+                        <tr>
+                            <th width="20%">Código</th>
+                            <th width="80%">Resumen (Nombre corto)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+            
+            missingTextItems.forEach(item => {
+                content += `
+                    <tr>
+                        <td class="font-mono text-xs font-bold" style="border-bottom:1px dashed #e2e8f0;">${item.code}</td>
+                        <td class="text-xs" style="border-bottom:1px dashed #e2e8f0;">${item.summary}</td>
+                    </tr>
+                `;
+            });
+            
+            content += `</tbody></table>`;
+        }
+
+        reports.printHTML(content, "Partidas sin texto largo");
     }
 };

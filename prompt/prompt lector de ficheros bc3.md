@@ -375,8 +375,23 @@ Punto 2) Redondear a 2 decimales el costes parcial añadiendole 0.0001 antes de 
 
 
 ---------
-PROMPT: MACROS
+PROMPT: MACROS: añadir %CI a todos los precios descompuestos (que no sean auxiliares)
 ---------
 Vamos a añadir una nueva opción llamada "Macros" EN LA BARRA SUPERIOR, cuando pulses sobre el abriras un formulario modal. En este formulario vamos a añadir varias macros
 La primera macro se llama "Añadir %CI a todos los descompuestos", si pulsas sobre ella, preguntas por el coeficiente de costes indirectos al usuario y añade a todos las partidas con descompuestos (que no sean partidas auxiliares ni capitulo "#" ni raiz "##"), un concepto del tipo "%", con codigo "%CI", y con precio el indicado por el usuario.
 Modificar la lógica de "applyIndirectCosts" no debe inyectar a las partidas auxiliares el concepto %CI
+
+**Pendiente**  
+--------- 
+PROMPT: MACROS: reemplazar textos   
+---------  
+- Quiero añadir una nueva "macro" en el formulario. Se llama "Buscar y Reemplazar".  Hará lo siguiente: 1. pedira el texto a buscar y el texto a reemplazar. 2. En los textos largos de los conceptos, buscara el texto y lo reemplazará.
+- Añade una nueva macro llamada "Informar sobre descompuestos sin textos largos", creará un informe con las partidas descompuestas que no tengan textos largos (no mostrará los capitulos o subcapitulos o el concepto raiz "##")  
+
+
+**pendiente**
+- añadir al listado de necesidades % del proyecto que representan y ordenarlas según estas.  
+- Poner solo textos largos en listados   
+
+
+
