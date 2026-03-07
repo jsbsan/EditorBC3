@@ -484,6 +484,18 @@ class BC3Engine {
             if (type === '' && comment === '' && u === 0 && l === 0 && w === 0 && h === 0) continue;
             mData.lines.push({ type, comment, units: u, length: l, width: w, height: h });
         }
+
+        // [MEJORA] Autogenerar línea de medición directa si no hay desglose (forzado)
+        if (mData.lines.length === 0) {
+            mData.lines.push({ 
+                type: '', 
+                comment: 'Medición directa', 
+                units: mData.total, 
+                length: 0, 
+                width: 0, 
+                height: 0 
+            });
+        }
     }
 
     initConcept(code) {

@@ -395,6 +395,24 @@ PROMPT: listado de codigos, unidad y partidad
 Quiero que añadas un nuevo informe dentro del apartado "Listados de recursos básicos", llamado "Solo Partidas", que genere un listado con el código, unidad de medida y nombre corto de las partidas.
 
 
+--------- 
+PROMPT: linea de descompuesto con medición pero no hay linea de medición
+---------  
+Mejora: Cuando el programa lea un archivo bc3, que compruebe en el caso de que no existir lineas de dimensiones, quiero que la cree para que sea esa MEDICIÓN_TOTAL
+
+**Pendiente**  
+--------- 
+PROMPT: formulas que indican numero
+--------- 
+Mejora: Si la linea de medición tiene una fórmula y esta es un numero (convierte el punto decimal coma decimal), lo que tiene que hacer el multiplicar unidades(N)*longitud(L)*anchura(A)*altura(H) por ese numero y ese será el valor de la linea de medición.. Si alguno de estos valores es 0, sustituyerlo por 1, para hacer el calculo. 
+a: Unidades (N)
+b: Longitud (L)
+c: Anchura (A)
+d: Altura (H)
+
+
+
+
 **Pendiente**  
 --------- 
 PROMPT: MACROS: reemplazar textos   
