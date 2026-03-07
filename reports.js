@@ -348,6 +348,11 @@ const reports = {
 
                         if (m.type === '3' && m.comment) {
                             parcial = engine.evaluateFormula(m.comment, m.units, m.length, m.width, m.height);
+                            // [MEJORA] Si la fórmula no usa variables de dimensión (a,b,c,d), actúa como factor multiplicador
+                            if (!/[abcd]/i.test(m.comment) && (m.units !== 0 || m.length !== 0 || m.width !== 0 || m.height !== 0)) {
+                                const val = (v) => v === 0 ? 1 : v;
+                                parcial = parcial * m.units * val(m.length) * val(m.width) * val(m.height);
+                            }
                         } else if (m.units !== 0 || m.length !== 0 || m.width !== 0 || m.height !== 0) {
                             const val = (v) => v === 0 ? 1 : v;
                             parcial = m.units * val(m.length) * val(m.width) * val(m.height);

@@ -404,11 +404,13 @@ Mejora: Cuando el programa lea un archivo bc3, que compruebe en el caso de que n
 --------- 
 PROMPT: formulas que indican numero
 --------- 
-Mejora: Si la linea de medición tiene una fórmula y esta es un numero (convierte el punto decimal coma decimal), lo que tiene que hacer el multiplicar unidades(N)*longitud(L)*anchura(A)*altura(H) por ese numero y ese será el valor de la linea de medición.. Si alguno de estos valores es 0, sustituyerlo por 1, para hacer el calculo. 
-a: Unidades (N)
-b: Longitud (L)
-c: Anchura (A)
-d: Altura (H)
+¿como analizarias esta linea de un fichero bc3: "~M|2.1#\T-053|2\1\6\|52|3\0.2\1\1300\4\0.05\|"?
+Respuesta:
+	Para analizar esta línea, la desglosaremos campo por campo. A diferencia de tus ejemplos anteriores, esta línea **sí contiene un desglose de dimensiones físicas** y hace un uso muy particular del campo de fórmulas.
+	Aquí tienes el análisis detallado de la línea:
+	Como puedes ver, es un ejemplo excelente de cómo algunos programas de mediciones fuerzan o "hackean" el formato BC3 para meter factores multiplicadores utilizando el Tipo 3.
+	El valor total inicial (52) se respeta perfectamente en tu código, aunque es un dato útil a tener en cuenta si alguna vez notas que los recálculos varían al pulsar el botón de recalcular en líneas que tienen este formato específico. ¡Dime si quieres que adaptemos el motor matemático para interceptar estos casos particulares!
+Si, adapta el motor matemáticos para estos casos.
 
 
 

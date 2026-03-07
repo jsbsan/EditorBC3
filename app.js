@@ -203,6 +203,11 @@ class BC3Engine {
                 const formula = isFormula ? (m.comment || '') : '';
                 if (isFormula && formula) {
                     parcial = this.evaluateFormula(formula, m.units, m.length, m.width, m.height);
+                    // [MEJORA] Si la fórmula no usa variables de dimensión (a,b,c,d), actúa como factor multiplicador
+                    if (!/[abcd]/i.test(formula) && (m.units !== 0 || m.length !== 0 || m.width !== 0 || m.height !== 0)) {
+                        const val = (v) => v === 0 ? 1 : v;
+                        parcial = parcial * m.units * val(m.length) * val(m.width) * val(m.height);
+                    }
                 } else if (m.units !== 0 || m.length !== 0 || m.width !== 0 || m.height !== 0) {
                     const val = (v) => v === 0 ? 1 : v;
                     parcial = m.units * val(m.length) * val(m.width) * val(m.height);
@@ -2287,6 +2292,11 @@ function selectNode(code, parentPath) {
                 
                 if (isFormula && formula) {
                     parcial = engine.evaluateFormula(formula, m.units, m.length, m.width, m.height);
+                    // [MEJORA] Si la fórmula no usa variables de dimensión (a,b,c,d), actúa como factor multiplicador
+                    if (!/[abcd]/i.test(formula) && (m.units !== 0 || m.length !== 0 || m.width !== 0 || m.height !== 0)) {
+                        const val = (v) => v === 0 ? 1 : v;
+                        parcial = parcial * m.units * val(m.length) * val(m.width) * val(m.height);
+                    }
                 } else if (m.units !== 0 || m.length !== 0 || m.width !== 0 || m.height !== 0) {
                     const val = (v) => v === 0 ? 1 : v;
                     parcial = m.units * val(m.length) * val(m.width) * val(m.height);
