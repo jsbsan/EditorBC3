@@ -713,8 +713,8 @@ class BC3Engine {
         // [MODIFICADO] Función para precios (2 decimales fijos) - USA PUNTO DECIMAL
         const fNumPrice = (n) => (n === undefined || n === null) ? '' : n.toFixed(2);
         
-        // [MODIFICADO] Función para rendimientos y factores (3 decimales fijos) - USA PUNTO DECIMAL
-        const fNumYield = (n) => (n === undefined || n === null) ? '' : n.toFixed(3);
+        // [MODIFICADO] Función para rendimientos y factores (4 decimales fijos) - USA PUNTO DECIMAL
+        const fNumYield = (n) => (n === undefined || n === null) ? '' : n.toFixed(4);
         
         // [MODIFICADO] Función general (para mediciones y otros) - USA PUNTO DECIMAL
         const fNum = (n) => (n === undefined || n === null) ? '' : n.toString();

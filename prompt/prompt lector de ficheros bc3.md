@@ -400,7 +400,6 @@ PROMPT: linea de descompuesto con medición pero no hay linea de medición
 ---------  
 Mejora: Cuando el programa lea un archivo bc3, que compruebe en el caso de que no existir lineas de dimensiones, quiero que la cree para que sea esa MEDICIÓN_TOTAL
 
-**Pendiente**  
 --------- 
 PROMPT: formulas que indican numero
 --------- 
@@ -413,6 +412,67 @@ Respuesta:
 Si, adapta el motor matemáticos para estos casos.
 
 
+
+--------- 
+PROMPT: bug al guardar la información y volver a leerla que el importe total varia.
+--------- 
+¿De los archivos que te adjunto,  deberian de ser iguales, ya que el programa lee el "D04_PPT SEVILLA ENCOMIENDA v0 ORIGINAL.bc3" y a continuación lo guardo con el nombre "MANTENIMIENTO Y CONSERVACION PRESAS ZONA SEVILLA_2026-03-07_20-22.bc3". Sin embargo cuando leo el "MANTENIMIENTO Y CONSERVACION PRESAS ZONA SEVILLA_2026-03-07_20-22.bc3" de nuevo, el calculo del presupuesto total es diferente, cuando deberia de ser igual. Analizalos y dime por que puede ser que esto ocurra al guardar y volver a leer la información.
+
+Respuesta:
+		He analizado detalladamente tanto el código de tu aplicación (`app.js`) como los dos archivos `.bc3` que has subido.
+
+		El motivo por el cual el presupuesto total cambia al guardar y volver a leer el archivo se debe a una **pérdida de precisión (redondeo) en los rendimientos y factores de las líneas de descomposición (`~D`) durante el proceso de guardado**.
+
+		Aquí tienes la explicación exacta de lo que está ocurriendo:
+
+		### 1. El problema principal: Truncamiento a 3 decimales
+
+		En el archivo original (`D04_PPT SEVILLA ENCOMIENDA v0 ORIGINAL.bc3`), existen partidas cuyos rendimientos tienen **4 decimales**.
+		Por ejemplo, si observas la descomposición de la partida **Z-003**:
+
+		* Original: `~D|Z-003|ZM0004\1\0.0833\|` (Rendimiento = **0.0833**)
+
+		Sin embargo, en tu archivo `app.js`, la función encargada de exportar a BC3 (`exportToBC3()`) tiene programado un formateo estricto que fuerza los rendimientos y factores a tener exactamente **3 decimales**:
+
+		```javascript
+		const fNumYield = (n) => (n === undefined || n === null) ? '' : n.toFixed(3);
+
+		```
+
+		Al guardar, el programa redondea `0.0833` y lo guarda como `0.083`. Puedes comprobarlo en el archivo nuevo:
+
+		* Guardado: `~D|Z-003|ZM0004\1.000\0.083|`
+
+		### 2. Cómo afecta esto a las matemáticas (Propagación del error)
+
+		Cuando la aplicación vuelve a abrir el archivo guardado, ejecuta automáticamente la macro `engine.recalculateProject()`. Al usar el valor redondeado, el cálculo cambia:
+
+		* **Cálculo Original:** 1 (factor) × 0.0833 (rendimiento) × 2311.27 € (precio de ZM0004) = **192.53 €**
+		* **Nuevo Cálculo:** 1 (factor) × 0.083 (rendimiento) × 2311.27 € = **191.84 €**
+
+		Esa diferencia de **-0.69 €** en la partida `Z-003` se multiplica por 7 cuando se usa en su capítulo padre (`1.1#`), y así sucesivamente hacia arriba, modificando el total general del presupuesto.
+
+		Este mismo caso ocurre en otras partidas del archivo original que usaban 4 decimales, como por ejemplo la partida **I09040**, donde rendimientos originales como `0.2818`, `0.0554` y `0.0776` se han guardado como `0.282`, `0.055` y `0.078`.
+
+		### 3. Otras diferencias en el archivo guardado (que NO afectan al cálculo)
+
+		Al comparar los archivos, he detectado otros cambios que tu exportador hace, pero te confirmo que **no son los culpables de la diferencia económica**, aunque hacen que los textos de los archivos sean distintos:
+
+		* **Campos vacíos en mediciones (`~M`):** En el original, si una dimensión estaba vacía se representaba sin nada (ej. `\2\\0.5\`). Al guardar, tu programa inyecta un `"0"` por la función `fNum(l.units)` (ej. `\2\0\0.5\0`). A nivel de cálculo no afecta porque en tu motor tienes programado `const val = (v) => v === 0 ? 1 : v;`, lo que compensa perfectamente el cero al multiplicar.
+		* **Omisión de la fecha en `~C`:** El archivo original guardaba la fecha de actualización del precio (ej. `|180219|`). El exportador de `app.js` lo deja vacío intencionadamente (`||`).
+		* **Posición omitida en `~M`:** El segundo bloque de los registros de medición (ej. el `2\1\3\` original) se exporta en blanco.
+
+		**En conclusión:** El recálculo arroja cifras diferentes porque tu motor de exportación altera los datos subyacentes (pasa de 4 decimales a 3 decimales en `~D`). Cuando el programa los lee de nuevo y recalcula de abajo hacia arriba basándose en estas nuevas cantidades menos precisas, el sumatorio de los Costes Directos diverge del original.
+
+Solución:
+Modifico la linea "const fNumYield = (n) => (n === undefined || n === null) ? '' : n.toFixed(3);" a "const fNumYield = (n) => (n === undefined || n === null) ? '' : n.toFixed(4);" y ya lo calcula bien
+
+
+** pendiente **
+--------- 
+PROMPT: guardado en formato bc3 con 4 decimales.
+--------- 
+Solo quiero que guardes con 4 decimales los de los precios elementales. El resto será con 2 decimales
 
 
 **Pendiente**  
