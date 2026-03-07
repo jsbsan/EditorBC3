@@ -1,6 +1,6 @@
 /**
  * PROYECTO: Visor Profesional FIEBDC-3 (BC3)
- * VERSION: 3.86 (Macros Buscar y Reemplazar)
+ * VERSION: 3.87 (Macro Renombrar Códigos)
  * DESCRIPCION: 
  * - [MEJORA] Gestión inteligente de nombres de archivo al Guardar.
  * - [LOGICA] Al abrir, se conserva el nombre original.
@@ -9,6 +9,7 @@
  * - [NUEVO] Funcionalidad pasteMeasurements.
  * - [CORRECCION] Macro applyIndirectCosts ahora excluye partidas auxiliares.
  * - [NUEVO] Macro replaceTextInDescriptions para buscar y reemplazar en pliegos.
+ * - [NUEVO] Macro renameCodesBatch para renombrado masivo mediante fichero CSV.
  */
 
 class BC3Engine {
@@ -624,6 +625,71 @@ class BC3Engine {
         return modifiedCount;
     }
 
+    // --- NUEVO: MACRO RENOMBRAR CÓDIGOS MASIVAMENTE (MEDIANTE CSV) ---
+    renameCodesBatch(renamePairs) {
+        let count = 0;
+        for (const {oldCode, newCode} of renamePairs) {
+            if (!oldCode || !newCode || oldCode === newCode) continue;
+            
+            // Si el antiguo no existe, ignorar
+            if (!this.db.has(oldCode)) continue;
+            
+            // Si el nuevo ya existe, advertimos y nos saltamos este para no sobrescribir datos valiosos
+            if (this.db.has(newCode)) {
+                console.warn(`No se puede renombrar ${oldCode} a ${newCode}: El código nuevo ya existe.`);
+                continue;
+            }
+
+            // 1. Mover el concepto en la base de datos principal
+            const concept = this.db.get(oldCode);
+            concept.code = newCode;
+            this.db.set(newCode, concept);
+            this.db.delete(oldCode);
+
+            // 2. Actualizar la variable rootCode si casualmente era la raíz (poco frecuente pero posible)
+            if (this.rootCode === oldCode) {
+                this.rootCode = newCode;
+            }
+
+            // 3. Recorrer TODOS los conceptos para actualizar en cascada los hijos/dependencias
+            for (const [key, parentConcept] of this.db) {
+                for (const child of parentConcept.children) {
+                    if (child.code === oldCode) {
+                        child.code = newCode;
+                    }
+                }
+            }
+
+            // 4. Actualizar el mapa de mediciones
+            const newMeasMap = new Map();
+            for (const [mKey, mData] of this.measurementsMap) {
+                let newKey = mKey;
+                if (mKey.includes('|')) {
+                    const parts = mKey.split('|');
+                    const pCode = parts[0] === oldCode ? newCode : parts[0];
+                    const cCode = parts[1] === oldCode ? newCode : parts[1];
+                    newKey = `${pCode}|${cCode}`;
+                } else if (mKey === oldCode) {
+                    newKey = newCode;
+                }
+                newMeasMap.set(newKey, mData);
+            }
+            this.measurementsMap = newMeasMap;
+
+            count++;
+        }
+        
+        // 5. Reconstruir por completo el mapa de padres para asegurar total integridad
+        this.parentMap.clear();
+        for (const [code, concept] of this.db) {
+            concept.children.forEach(child => {
+                this.parentMap.set(this.normalizeCode(child.code), concept.code);
+            });
+        }
+        
+        return count;
+    }
+
     exportToBC3() {
         const lines = [];
         
@@ -829,6 +895,89 @@ const ui = {
                 if (loaderText) loaderText.textContent = "Procesando...";
             }
         }, 50);
+    },
+
+    // [NUEVO] Macro Renombrar códigos mediante archivo CSV
+    runMacroRenameCodes: () => {
+        ui.closeMacrosModal();
+        
+        // 1. Mostrar las instrucciones obligatorias al usuario
+        alert("El fichero csv tiene que tener dos columnas: la primera con el codigo actual, la segunda con el codigo nuevo");
+        
+        // 2. Crear input oculto para elegir el archivo
+        const fileInput = document.createElement('input');
+        fileInput.type = 'file';
+        fileInput.accept = '.csv';
+        
+        fileInput.onchange = (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const loader = document.getElementById('loader');
+            const loaderText = document.getElementById('loader-text');
+            
+            if (loaderText) loaderText.textContent = "Renombrando códigos...";
+            if (loader) loader.style.display = 'flex';
+
+            const reader = new FileReader();
+            reader.onload = (res) => {
+                setTimeout(() => { // Usar timeout para permitir que el loader se renderice
+                    try {
+                        const text = res.target.result;
+                        const lines = text.split(/\r\n|\n|\r/);
+                        const renamePairs = [];
+                        
+                        for (let line of lines) {
+                            if (!line.trim()) continue;
+                            
+                            // Soporta separador punto y coma o coma
+                            const cols = line.split(/[;,]/);
+                            if (cols.length >= 2) {
+                                // Eliminar posibles comillas sobrantes y espacios
+                                const oldCode = cols[0].trim().replace(/^"|"$/g, '');
+                                const newCode = cols[1].trim().replace(/^"|"$/g, '');
+                                
+                                if (oldCode && newCode && oldCode !== newCode) {
+                                    renamePairs.push({ oldCode, newCode });
+                                }
+                            }
+                        }
+
+                        // Ejecutar la actualización masiva
+                        const affectedCount = engine.renameCodesBatch(renamePairs);
+                        
+                        // Recalcular el proyecto
+                        engine.recalculateProject();
+                        
+                        // Refrescar UI y seleccionar raíz para evitar apuntar a un objeto huérfano
+                        renderAll(false);
+                        if (engine.rootCode) {
+                            selectNode(engine.rootCode, null); 
+                        }
+
+                        // 3. Informar al usuario
+                        ui.showToast(`Se han renombrado ${affectedCount} códigos.`);
+                        setTimeout(() => alert(`Proceso terminado. Se han renombrado ${affectedCount} códigos.`), 100);
+                        
+                    } catch (err) {
+                        console.error(err);
+                        alert("Error ejecutando la macro de renombrado: " + err.message);
+                    } finally {
+                        if (loader) loader.style.display = 'none';
+                        if (loaderText) loaderText.textContent = "Procesando...";
+                    }
+                }, 50);
+            };
+            
+            reader.onerror = () => {
+                alert("Error al leer el archivo CSV.");
+                if (loader) loader.style.display = 'none';
+            };
+            
+            reader.readAsText(file, 'windows-1252'); // windows-1252 o UTF-8 dependiendo de exportación de excel
+        };
+        
+        fileInput.click();
     },
 
     createNewProject: () => {

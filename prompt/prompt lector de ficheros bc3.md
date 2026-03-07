@@ -361,7 +361,6 @@ Puedes añadir una boton de "ayuda" que abra un formulario donde se explique que
 ---------
 PROMPT: letra de texto largo mas grande y sin cursiva.
 ---------
-
 Modifica los listado para que el texto largo lo muestre sin cursiva y con la letra un poco más grande.
 
 ---------
@@ -372,14 +371,23 @@ Quiero que modifiques el calculo del algoritmo de calculo en dos puntos:
 Punto 1) Si el descompuesto contiene una partida auxiliar (tipo 0) que extraiga que parte es mano de obra, maquinaria y otro. Ademas multiplique cada cantidad por el rendimiento  mas 0.00001 redondeando a 2 decimales y lo sume a lo que le corresponda (al totalMO, totalMQ  y totalResto.  
 Punto 2) Redondear a 2 decimales el costes parcial añadiendole 0.0001 antes de redondear: Redondear( factor x rendimiento x precio de hijo +0.0001, 2 decimales)  
 
-
-
 ---------
 PROMPT: MACROS: añadir %CI a todos los precios descompuestos (que no sean auxiliares)
 ---------
 Vamos a añadir una nueva opción llamada "Macros" EN LA BARRA SUPERIOR, cuando pulses sobre el abriras un formulario modal. En este formulario vamos a añadir varias macros
 La primera macro se llama "Añadir %CI a todos los descompuestos", si pulsas sobre ella, preguntas por el coeficiente de costes indirectos al usuario y añade a todos las partidas con descompuestos (que no sean partidas auxiliares ni capitulo "#" ni raiz "##"), un concepto del tipo "%", con codigo "%CI", y con precio el indicado por el usuario.
 Modificar la lógica de "applyIndirectCosts" no debe inyectar a las partidas auxiliares el concepto %CI
+
+--------- 
+PROMPT: MACROS: renombrar código de partida.
+---------  
+Voy a subir varios archivos de un proyecto web (HTML, CSS y JavaScript). Por ahora, solo quiero que los proceses y los mantengas en tu memoria de contexto. No realices ningún cambio, no reescribas el código ni propongas mejoras todavía.
+Añadir una nueva macro llamada "Renombrar codigos de partidas", que haga lo siguientes:
+- Pida al usuario un fichero .csv que con el siguiente texto: "El fichero csv tiene que tener dos columnas: la primera con el codigo actual, la segunda con el codigo nuevo"
+- Lea el fichero csv. En la primera columna tiene el codigo actual y en la segunda columna tiene el codigo a nuevo a renombrar.
+- Procese todas las partidas,  y todas las filas del fichero csv, en el caso de que el codigo que tenga coincida con el de la primera columna lo renombra con el de la segunda.
+- Indica con un mensaje final que ha terminado de renombrar los códigos.
+- No quiero que unifiques los archivos de codigo en uno solo. Dejalo separados añadiendo el código necesario de la nueva mejora.
 
 **Pendiente**  
 --------- 
@@ -392,6 +400,3 @@ PROMPT: MACROS: reemplazar textos
 **pendiente**
 - añadir al listado de necesidades % del proyecto que representan y ordenarlas según estas.  
 - Poner solo textos largos en listados   
-
-
-

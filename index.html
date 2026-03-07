@@ -1,9 +1,9 @@
 <!-- 
     PROYECTO: Visor Profesional FIEBDC-3 (BC3)
-    VERSION: 3.86 (Macros Update & Missing Texts Report)
+    VERSION: 3.87 (Macro Renombrar Códigos)
     DESCRIPCION: 
     - [NUEVO] Botón "Macros" en la barra superior.
-    - [NUEVO] Modal de Macros con las funciones "Añadir %CI", "Buscar y Reemplazar" e "Informe sin pliegos".
+    - [NUEVO] Modal de Macros con las funciones "Añadir %CI", "Buscar y Reemplazar", "Informe sin pliegos" y "Renombrar códigos".
     - [LOGICA] Integración con las nuevas funciones de app.js y reports.js para gestión de costes indirectos y edición en masa.
 -->
 <!DOCTYPE html>
@@ -11,7 +11,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Visor Profesional FIEBDC-3 (BC3) v3.86</title>
+    <title>Visor Profesional FIEBDC-3 (BC3) v3.87</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Estilos Personalizados -->
@@ -153,15 +153,15 @@
             </div>
 
             <div class="mt-8 text-[10px] text-slate-300">
-                Versión 3.86 Build 2026
+                Versión 3.87 Build 2026
             </div>
         </div>
     </div>
 
     <!-- [NUEVO] Modal de Macros -->
     <div id="modal-macros" class="modal-overlay" onclick="if(event.target === this) ui.closeMacrosModal()">
-        <div class="bg-white rounded-xl shadow-2xl w-full max-w-lg overflow-hidden transform transition-all scale-100">
-            <div class="px-6 py-4 bg-slate-50 border-b border-slate-100 flex justify-between items-center">
+        <div class="bg-white rounded-xl shadow-2xl w-full max-w-lg overflow-hidden transform transition-all scale-100 max-h-[90vh] flex flex-col">
+            <div class="px-6 py-4 bg-slate-50 border-b border-slate-100 flex justify-between items-center shrink-0">
                 <h3 class="font-bold text-slate-700 flex items-center gap-2">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-yellow-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
@@ -175,7 +175,7 @@
                 </button>
             </div>
             
-            <div class="p-6 space-y-4">
+            <div class="p-6 space-y-4 overflow-y-auto">
                 <p class="text-sm text-slate-500 mb-4">Seleccione una macro para ejecutar sobre el proyecto actual. <span class="font-bold text-red-400">Estas acciones modifican la base de datos.</span></p>
 
                 <!-- Macro 1: Añadir CI -->
@@ -230,10 +230,24 @@
                     </div>
                 </button>
 
-                <!-- Espacio para futuras macros -->
-                <div class="border-t border-dashed border-slate-200 pt-4 text-center mt-4">
-                    <p class="text-[10px] text-slate-300 italic">Más macros próximamente...</p>
-                </div>
+                <!-- [NUEVO] Macro 4: Renombrar códigos de partidas -->
+                <button onclick="ui.runMacroRenameCodes()" class="w-full flex items-center gap-4 p-4 border border-slate-200 rounded-xl hover:bg-emerald-50 hover:border-emerald-300 hover:shadow-md transition-all group text-left mt-3">
+                    <div class="bg-emerald-100 p-3 rounded-lg group-hover:bg-emerald-200 transition-colors">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                        </svg>
+                    </div>
+                    <div>
+                        <h4 class="font-bold text-slate-700 text-sm">Renombrar códigos de partidas</h4>
+                        <p class="text-[10px] text-slate-500">Carga un CSV con el código actual y el nuevo para actualizar y renombrar referencias masivamente.</p>
+                    </div>
+                    <div class="ml-auto text-slate-300 group-hover:text-emerald-600">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                        </svg>
+                    </div>
+                </button>
+
             </div>
         </div>
     </div>
@@ -923,9 +937,9 @@
         <div class="flex items-center gap-4">
             <div class="flex items-center gap-2 text-blue-600">
                 <span class="w-2 h-2 rounded-full bg-blue-500 animate-pulse"></span>
-                Motor BC3 V3.81 - Profesional
+                Motor BC3 V3.87 - Profesional
             </div>
-            <!-- [CAMBIO] Botón Ayuda añadido -->
+            <!-- Botón Ayuda -->
             <button onclick="ui.openHelpModal()" class="flex items-center gap-1 bg-white hover:bg-blue-50 text-blue-600 hover:text-blue-700 px-3 py-1 rounded-full border border-blue-200 transition-colors shadow-sm font-bold">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
