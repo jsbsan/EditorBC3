@@ -1,12 +1,13 @@
 /**
  * PROYECTO: Visor Profesional FIEBDC-3 (BC3)
  * MODULO: Generador de Listados Jerárquicos
- * VERSION: 3.86 (Format Restoration & Macros)
+ * VERSION: 3.88 (Informe Solo Partidas)
  * DESCRIPCION: 
  * - [CORRECCION] Restaurado el formato legible del código (indentación y saltos de línea).
  * - [LOGICA] Mantiene el algoritmo de cálculo modificado para CP2.
  * - [VISUAL] Mantiene los estilos de texto mejorados (sin cursiva).
  * - [NUEVO] Macro generateMissingTextReport añadida.
+ * - [NUEVO] Informe generatePartidasReport añadido (Solo Partidas).
  */
 
 const reports = {
@@ -1248,5 +1249,49 @@ const reports = {
         }
 
         reports.printHTML(content, "Partidas sin texto largo");
+    },
+
+    // --- NUEVO INFORME: SOLO PARTIDAS ---
+    generatePartidasReport: () => {
+        let content = `<h1>Listado de Partidas</h1>`;
+        content += `<div class="meta">PROYECTO: ${engine.rootCode} | DIVISA: ${engine.metadata.currency}</div>`;
+
+        const items = Array.from(engine.db.values())
+            .filter(c => {
+                // Excluir la raíz y los capítulos
+                const isContainer = c.code.endsWith('#') || c.code.endsWith('##') || c.code === engine.rootCode;
+                return !isContainer;
+            })
+            .sort((a, b) => a.code.localeCompare(b.code));
+
+        if (items.length === 0) {
+             content += `<p class="text-center italic" style="padding:20px;">No se encontraron partidas.</p>`;
+        } else {
+             content += `
+                <table>
+                    <thead>
+                        <tr>
+                            <th width="15%">Código</th>
+                            <th width="10%" class="text-center">Ud</th>
+                            <th width="75%">Resumen (Nombre corto)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+
+            items.forEach(item => {
+                content += `
+                    <tr>
+                        <td class="font-mono text-xs font-bold" style="border-bottom:1px dashed #e2e8f0;">${item.code}</td>
+                        <td class="text-center text-xs text-slate-500" style="border-bottom:1px dashed #e2e8f0;">${item.unit || ''}</td>
+                        <td class="text-xs" style="border-bottom:1px dashed #e2e8f0;">${item.summary}</td>
+                    </tr>
+                `;
+            });
+
+            content += `</tbody></table>`;
+        }
+
+        reports.printHTML(content, "Solo Partidas");
     }
 };

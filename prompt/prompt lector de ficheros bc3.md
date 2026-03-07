@@ -389,6 +389,12 @@ Añadir una nueva macro llamada "Renombrar codigos de partidas", que haga lo sig
 - Indica con un mensaje final que ha terminado de renombrar los códigos.
 - No quiero que unifiques los archivos de codigo en uno solo. Dejalo separados añadiendo el código necesario de la nueva mejora.
 
+--------- 
+PROMPT: listado de codigos, unidad y partidad
+---------  
+Quiero que añadas un nuevo informe dentro del apartado "Listados de recursos básicos", llamado "Solo Partidas", que genere un listado con el código, unidad de medida y nombre corto de las partidas.
+
+
 **Pendiente**  
 --------- 
 PROMPT: MACROS: reemplazar textos   
