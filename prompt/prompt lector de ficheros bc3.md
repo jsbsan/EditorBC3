@@ -532,14 +532,33 @@ Respuesta:
 	Con este cambio, si el programa detecta comillas de Word o guiones largos, los aplanará automáticamente a su versión básica de teclado y se exportarán perfectamente en el archivo BC3, eliminando los molestos signos de interrogación.
 
 
-**Pendiente**  
 --------- 
 PROMPT: reportes: el rendimiento debe de ir con los decimales que indique el "dr" de ~k
 ---------  
+Necesito que los reportes que se hagan, en la columna de rendimiento ponga el numero de caracteres indicado por el parametro 'dr'.
+Verifica que el archivo reports.js esta completo y no se ha olvidado ninguna funcionalidad del original, al modificarlo.
+
+
+¿como hago que esta linea de codigo tenga en cuenta el numero de decimales definidos por DC, DR y Di? la linea de codigo es esta: const totalCost = item.totalQty * item.concept.price;
+Respuesta:
+	Para que esa línea de código calcule el resultado de forma matemáticamente exacta según la normativa BC3, debes redondear primero la **cantidad** a los decimales de rendimiento (`DR`), el **precio** a los decimales de coste (`DC`), y finalmente redondear el **resultado** de la multiplicación a los decimales de importe (`DI`).
+
+	Como esta línea aparece en dos funciones diferentes (`generateNeedsReport` y `generateAuxiliaryNeedsReport`), te he preparado la modificación exacta para ambas.
+
+	Aquí tienes la actualización en el archivo aplicando el redondeo matemático correcto mediante la lectura de los metadatos del proyecto:
+
+	**¿Qué hace exactamente este cambio?**
+
+	1. Crea una pequeña función matemática `roundTo(val, dec)` que evita los clásicos fallos de coma flotante de JavaScript (añadiendo `0.00001` antes de redondear).
+	2. Lee en tiempo real cuántos decimales exige tu archivo `.bc3` (desde `engine.metadata`).
+	3. Obliga a que cantidad y precio estén truncados a su precisión exacta antes de ejecutar la operación de coste total (`totalCost`), y vuelve a truncar este último a la precisión exigida para importes finales (`DI`).
+implementa el codigo en el fichero reports.js para esas lineas
+	¡Claro que sí! He aplicado exactamente tu lógica de redondeo matemático a las dos funciones correspondientes (`generateNeedsReport` y `generateAuxiliaryNeedsReport`) dentro del archivo `reports.js`.
+
+	Aquí tienes el archivo completo con la actualización integrada para que el cálculo del importe total (`totalCost`) utilice el número exacto de decimales (`DR`, `DC` y `DI`) antes y después de la multiplicación:
 
 
 
-**Pendiente**  
 --------- 
 PROMPT: MACROS: reemplazar textos   
 ---------  

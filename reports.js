@@ -1,13 +1,15 @@
 /**
  * PROYECTO: Visor Profesional FIEBDC-3 (BC3)
  * MODULO: Generador de Listados Jerárquicos
- * VERSION: 3.88 (Informe Solo Partidas)
+ * VERSION: 3.90 (Cálculos de importes con precisión estricta por metadatos)
  * DESCRIPCION: 
  * - [CORRECCION] Restaurado el formato legible del código (indentación y saltos de línea).
  * - [LOGICA] Mantiene el algoritmo de cálculo modificado para CP2.
  * - [VISUAL] Mantiene los estilos de texto mejorados (sin cursiva).
  * - [NUEVO] Macro generateMissingTextReport añadida.
  * - [NUEVO] Informe generatePartidasReport añadido (Solo Partidas).
+ * - [MEJORA] Los listados ahora usan el parámetro 'DR' del registro ~K para los decimales de rendimiento.
+ * - [MEJORA] Cálculo estricto de totalCost en listados de Necesidades basando el producto en factores pre-redondeados.
  */
 
 const reports = {
@@ -348,7 +350,6 @@ const reports = {
 
                         if (m.type === '3' && m.comment) {
                             parcial = engine.evaluateFormula(m.comment, m.units, m.length, m.width, m.height);
-                            // [MEJORA] Si la fórmula no usa variables de dimensión (a,b,c,d), actúa como factor multiplicador
                             if (!/[abcd]/i.test(m.comment) && (m.units !== 0 || m.length !== 0 || m.width !== 0 || m.height !== 0)) {
                                 const val = (v) => v === 0 ? 1 : v;
                                 parcial = parcial * m.units * val(m.length) * val(m.width) * val(m.height);
@@ -863,7 +864,18 @@ const reports = {
 
         list.forEach(item => {
             const orderGroup = getOrder(item.concept.type);
-            const totalCost = item.totalQty * item.concept.price;
+            
+            // Extraer configuración de decimales desde los metadatos del BC3
+            const dr = engine.metadata.dr || 2;
+            const dc = engine.metadata.dc || 2;
+            const di = engine.metadata.di || 2;
+            
+            // Redondear matemáticamente cada factor a su respectiva precisión antes de multiplicar
+            const roundTo = (val, dec) => Math.round((val + 0.00001) * Math.pow(10, dec)) / Math.pow(10, dec);
+            const roundedQty = roundTo(item.totalQty, dr);
+            const roundedPrice = roundTo(item.concept.price, dc);
+            
+            const totalCost = roundTo(roundedQty * roundedPrice, di);
             
             if (orderGroup !== currentTypeGroup) {
                 if (currentTypeGroup !== -1) {
@@ -893,7 +905,7 @@ const reports = {
                     <td class="text-xs">${item.concept.summary}</td>
                     <td class="text-center text-xs text-slate-400">${item.concept.type}</td>
                     <td class="text-right text-xs">${reports.formatCurrency(item.concept.price, 'DC')}</td>
-                    <td class="text-right text-xs font-bold">${reports.fmtThreeDecimals(item.totalQty)} ${item.concept.unit}</td>
+                    <td class="text-right text-xs font-bold">${reports.format(item.totalQty, 'DR')} ${item.concept.unit}</td>
                     <td class="text-right text-xs font-black">${reports.formatCurrency(totalCost, 'DI')}</td>
                 </tr>
             `;
@@ -1003,7 +1015,18 @@ const reports = {
             let grandTotal = 0;
 
             list.forEach(item => {
-                const totalCost = item.totalQty * item.concept.price;
+                // Extraer configuración de decimales desde los metadatos del BC3
+                const dr = engine.metadata.dr || 2;
+                const dc = engine.metadata.dc || 2;
+                const di = engine.metadata.di || 2;
+                
+                // Redondear matemáticamente cada factor a su respectiva precisión antes de multiplicar
+                const roundTo = (val, dec) => Math.round((val + 0.00001) * Math.pow(10, dec)) / Math.pow(10, dec);
+                const roundedQty = roundTo(item.totalQty, dr);
+                const roundedPrice = roundTo(item.concept.price, dc);
+                
+                const totalCost = roundTo(roundedQty * roundedPrice, di);
+                
                 grandTotal += totalCost;
 
                 content += `
@@ -1012,7 +1035,7 @@ const reports = {
                         <td class="text-xs">${item.concept.summary}</td>
                         <td class="text-center text-xs text-slate-500">${item.concept.unit}</td>
                         <td class="text-right text-xs">${reports.formatCurrency(item.concept.price, 'DC')}</td>
-                        <td class="text-right text-xs font-bold bg-yellow-50">${reports.fmtThreeDecimals(item.totalQty)}</td>
+                        <td class="text-right text-xs font-bold bg-yellow-50">${reports.format(item.totalQty, 'DR')}</td>
                         <td class="text-right text-xs font-black">${reports.formatCurrency(totalCost, 'DI')}</td>
                     </tr>
                 `;
@@ -1106,7 +1129,7 @@ const reports = {
                             <td class="font-mono text-xs" style="border-bottom:1px dashed #f1f5f9;">${childConcept ? childConcept.code : child.code}</td>
                             <td class="text-xs" style="border-bottom:1px dashed #f1f5f9;">${childConcept ? childConcept.summary : '<span style="color:red">No encontrado</span>'}</td>
                             <td class="text-center text-xs" style="border-bottom:1px dashed #f1f5f9; color:#94a3b8;">${childConcept ? childConcept.unit : ''}</td>
-                            <td class="text-right text-xs" style="border-bottom:1px dashed #f1f5f9;">${reports.fmtThreeDecimals(quantity)}</td>
+                            <td class="text-right text-xs" style="border-bottom:1px dashed #f1f5f9;">${reports.format(quantity, 'DR')}</td>
                             <td class="text-right text-xs" style="border-bottom:1px dashed #f1f5f9;">${reports.formatCurrency(unitPrice, 'DC')}</td>
                             <td class="text-right text-xs" style="border-bottom:1px dashed #f1f5f9;">${reports.formatCurrency(cost, 'DI')}</td>
                         </tr>
@@ -1196,7 +1219,7 @@ const reports = {
                         <td class="font-mono text-xs" style="border-bottom:1px dashed #f1f5f9;">${childConcept ? childConcept.code : child.code}</td>
                         <td class="text-xs" style="border-bottom:1px dashed #f1f5f9;">${childConcept ? childConcept.summary : '<span style="color:red">No encontrado</span>'}</td>
                         <td class="text-center text-xs" style="border-bottom:1px dashed #f1f5f9; color:#94a3b8;">${childConcept ? childConcept.unit : ''}</td>
-                        <td class="text-right text-xs" style="border-bottom:1px dashed #f1f5f9;">${reports.fmtThreeDecimals(quantity)}</td>
+                        <td class="text-right text-xs" style="border-bottom:1px dashed #f1f5f9;">${reports.format(quantity, 'DR')}</td>
                         <td class="text-right text-xs" style="border-bottom:1px dashed #f1f5f9;">${reports.formatCurrency(unitPrice, 'DC')}</td>
                         <td class="text-right text-xs" style="border-bottom:1px dashed #f1f5f9;">${reports.formatCurrency(cost, 'DI')}</td>
                     </tr>
