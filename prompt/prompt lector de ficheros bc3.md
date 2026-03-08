@@ -467,12 +467,76 @@ Respuesta:
 Solución:
 Modifico la linea "const fNumYield = (n) => (n === undefined || n === null) ? '' : n.toFixed(3);" a "const fNumYield = (n) => (n === undefined || n === null) ? '' : n.toFixed(4);" y ya lo calcula bien
 
+--------- 
+PROMPT: ~k: revisión de como se guardan los valores que se leen
+--------- 
+Habia modificadores de coe que "eliminaban" el valor original, por ejemplo:
 
-** pendiente **
+this.metadata.dr = 3; // Fuerza los Decimales de Rendimiento a 3
+Lo he quitado (dejandolo como si fueran comentarios), para que se guarde con el valor leido.
+
+
+
 --------- 
-PROMPT: guardado en formato bc3 con 4 decimales.
+PROMPT: caracteres especiales
 --------- 
-Solo quiero que guardes con 4 decimales los de los precios elementales. El resto será con 2 decimales
+veo que al guardar el texto en bc3 las comillas  las convierte en caracter "?" ¿por que puede ser?
+Respuesta:
+	El problema se debe a que el texto que estás intentando guardar seguramente contiene **"comillas tipográficas" o "curvas"** (las que se ven inclinadas así `“` `”` o simples `‘` `’`), que son muy comunes cuando copias y pegas texto desde programas como Microsoft Word o PDFs.
+
+	### ¿Qué está pasando en el código?
+
+	En la línea 818 de tu archivo `app.js`, la función `saveFile` convierte el texto a formato **ANSI** (Windows-1252) para que los programas antiguos de presupuestos puedan leerlo correctamente.
+
+	Hace un bucle carácter por carácter:
+
+	1. Si el carácter es un símbolo ASCII normal (código menor a 128, como la comilla recta `"`, letras sin tilde, números), lo deja pasar.
+	2. Si es mayor a 128, lo busca en una "lista blanca" (un `switch` que tienes en la línea 824) donde tienes añadidas las letras con tilde (`á`, `é`), la `ñ`, el símbolo `€`, etc.
+	3. Si el carácter **no está en esa lista blanca**, ejecuta la instrucción `default: tempBuf[i] = 63;`, que fuerza a escribir el código 63... **¡que es exactamente el símbolo de interrogación `?`!**
+
+	Como las comillas curvas tienen códigos muy altos (8220 y 8221), no están en la lista y se convierten en un `?`. Lo mismo te pasará con los guiones largos (`—`).
+
+	### La solución
+
+	Para solucionarlo, simplemente tenemos que añadir estos caracteres especiales a tu "lista blanca" (el bloque `switch`) y decirle que los convierta a su equivalente en ASCII normal (las comillas rectas `"` y `'` o el guion normal `-`).
+
+	Aquí tienes el código para actualizar tu `app.js`:
+
+	// ... existing code ...
+	                    case 252: tempBuf[i] = 252; break; // ü
+	                    case 220: tempBuf[i] = 220; break; // Ü
+	                    case 191: tempBuf[i] = 191; break; // ¿
+	                    case 161: tempBuf[i] = 161; break; // ¡
+	                    
+	                    // --- NUEVOS CARACTERES: Comillas y Guiones tipográficos ---
+	                    case 8220: // “ (Comilla doble curva apertura)
+	                    case 8221: // ” (Comilla doble curva cierre)
+	                        tempBuf[i] = 34; break; // Se convierte a comilla doble recta (")
+	                    case 8216: // ‘ (Comilla simple curva apertura)
+	                    case 8217: // ’ (Comilla simple curva cierre)
+	                        tempBuf[i] = 39; break; // Se convierte a comilla simple recta (')
+	                    case 8211: // – (Guion corto)
+	                    case 8212: // — (Guion largo)
+	                        tempBuf[i] = 45; break; // Se convierte a guion normal (-)
+	                        
+	                    default: tempBuf[i] = 63; // ? 
+	                }
+	            }
+	        }
+
+	        const blob = new Blob([tempBuf], { type: 'application/octet-stream' });
+	// ... existing code ...
+
+
+
+	Con este cambio, si el programa detecta comillas de Word o guiones largos, los aplanará automáticamente a su versión básica de teclado y se exportarán perfectamente en el archivo BC3, eliminando los molestos signos de interrogación.
+
+
+**Pendiente**  
+--------- 
+PROMPT: reportes: el rendimiento debe de ir con los decimales que indique el "dr" de ~k
+---------  
+
 
 
 **Pendiente**  
@@ -486,3 +550,15 @@ PROMPT: MACROS: reemplazar textos
 **pendiente**
 - añadir al listado de necesidades % del proyecto que representan y ordenarlas según estas.  
 - Poner solo textos largos en listados   
+
+
+
+
+
+
+---------
+## NOTA:
+---------
+Prompt Para cargar el proyecto que ya tenemos:
+Voy a subir varios archivos de un proyecto web (HTML, CSS y JavaScript). Por ahora, solo quiero que los proceses y los mantengas en tu memoria de contexto. No realices ningún cambio, no reescribas el código ni propongas mejoras todavía.
+
