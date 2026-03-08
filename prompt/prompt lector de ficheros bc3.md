@@ -566,6 +566,14 @@ PROMPT: MACROS: reemplazar textos
 - Añade una nueva macro llamada "Informar sobre descompuestos sin textos largos", creará un informe con las partidas descompuestas que no tengan textos largos (no mostrará los capitulos o subcapitulos o el concepto raiz "##")  
 
 
+--------- 
+PROMPT: listado de descompuesto "clasico"
+---------  
+Quiero que el reporte de precios descompuestos sea similar a la imagen que te adjunto.
+(le pongo una captura de imagen de un listado de descompuestos generado por presto)
+
+
+
 **pendiente**
 - añadir al listado de necesidades % del proyecto que representan y ordenarlas según estas.  
 - Poner solo textos largos en listados   

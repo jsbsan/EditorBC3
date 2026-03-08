@@ -1145,7 +1145,7 @@ const reports = {
 
     // --- LISTADO DE DESCOMPUESTOS ---
     generateDecompositionReport: () => {
-        let content = `<h1>Descompuestos</h1>`; 
+        let content = `<h1>Cuadro de Precios Descompuestos</h1>`; 
         content += `<div class="meta">PROYECTO: ${engine.rootCode} | DIVISA: ${engine.metadata.currency}</div>`;
         
         const hierarchyMemberCodes = new Set();
@@ -1169,67 +1169,105 @@ const reports = {
 
         if (complexItems.length === 0) {
              content += `<p class="text-center italic">No se encontraron partidas con descomposición en la estructura principal.</p>`;
-        }
-
-        complexItems.forEach(parent => {
-             let descriptionHtml = '';
-             if (parent.description && parent.description.trim().length > 0) {
-                 const safeText = reports.escapeHtml(parent.description).replace(/\n/g, '<br>');
-                 descriptionHtml = `
-                    <div style="padding: 10px 15px; background-color: #ffffff; border-bottom: 1px solid #cbd5e1; color: #475569; font-size: 1em; font-family: sans-serif; font-style: normal; margin-bottom: 5px;">
-                        ${safeText}
-                    </div>
-                 `;
-             }
-
-             content += `
-                <div class="no-break" style="margin-top: 20px; border: 1px solid #e2e8f0; padding: 0; border-radius: 4px; overflow:hidden;">
-                    <div style="background-color: #f1f5f9; padding: 10px; border-bottom: 1px solid #e2e8f0; display:flex; justify-content:space-between; align-items:center;">
-                        <div>
-                            <span style="color:#1e40af; font-weight:bold; font-family:monospace; font-size:1.1em; margin-right:10px;">${parent.code}</span>
-                            <span style="font-weight:bold;">${parent.summary}</span>
-                        </div>
-                        <span style="font-weight:black; font-size:1.1em;">${reports.formatCurrency(parent.price, 'DC')}</span>
-                    </div>
-                    
-                    ${descriptionHtml}
-
-                    <table style="width:100%; font-size: 0.9em; margin-bottom:0; border:none;">
-                        <thead style="background:white;">
-                            <tr style="color:#64748b; font-size:0.8em; text-transform:uppercase;">
-                                <th width="15%" style="border-bottom:1px solid #eee;">Código</th>
-                                <th width="40%" style="border-bottom:1px solid #eee;">Descripción Recurso</th>
-                                <th width="10%" class="text-center" style="border-bottom:1px solid #eee;">Ud</th>
-                                <th width="10%" class="text-right" style="border-bottom:1px solid #eee;">Rend.</th>
-                                <th width="10%" class="text-right" style="border-bottom:1px solid #eee;">Precio</th>
-                                <th width="15%" class="text-right" style="border-bottom:1px solid #eee;">Importe</th>
-                            </tr>
-                        </thead>
-                        <tbody>
+        } else {
+            content += `
+                <style>
+                    .decomp-table { width: 100%; border-collapse: collapse; font-family: 'Arial', sans-serif; font-size: 11px; margin-bottom: 20px; }
+                    .decomp-table th { border-top: 1px solid #000; border-bottom: 1px solid #000; padding: 6px 4px; text-align: left; background: transparent; color: #000; font-size: 10px; }
+                    .decomp-table td { padding: 2px 4px; vertical-align: top; border-bottom: none; color: #000; }
+                </style>
+                <table class="decomp-table">
+                    <thead>
+                        <tr>
+                            <th width="12%">CÓDIGO</th>
+                            <th width="10%" class="text-right">CANTIDAD</th>
+                            <th width="5%" style="padding-left: 8px;">UD</th>
+                            <th width="43%">RESUMEN</th>
+                            <th width="10%" class="text-right">PRECIO</th>
+                            <th width="10%" class="text-right">SUBTOTAL</th>
+                            <th width="10%" class="text-right">IMPORTE</th>
+                        </tr>
+                    </thead>
+                    <tbody>
             `;
-            
-            parent.children.forEach(child => {
-                const childConcept = engine.resolveConcept(child.code);
-                const quantity = child.factor * child.yield;
-                const unitPrice = childConcept ? childConcept.price : 0;
-                const cost = quantity * unitPrice;
-                
+
+            complexItems.forEach(parent => {
+                let descHtml = '';
+                if (parent.description && parent.description.trim().length > 0) {
+                    descHtml = `<br><span style="font-weight: normal; margin-top: 4px; display: inline-block;">${reports.escapeHtml(parent.description).replace(/\n/g, '<br>')}</span>`;
+                }
+
+                // Fila Padre
                 content += `
-                    <tr>
-                        <td class="font-mono text-xs" style="border-bottom:1px dashed #f1f5f9;">${childConcept ? childConcept.code : child.code}</td>
-                        <td class="text-xs" style="border-bottom:1px dashed #f1f5f9;">${childConcept ? childConcept.summary : '<span style="color:red">No encontrado</span>'}</td>
-                        <td class="text-center text-xs" style="border-bottom:1px dashed #f1f5f9; color:#94a3b8;">${childConcept ? childConcept.unit : ''}</td>
-                        <td class="text-right text-xs" style="border-bottom:1px dashed #f1f5f9;">${reports.format(quantity, 'DR')}</td>
-                        <td class="text-right text-xs" style="border-bottom:1px dashed #f1f5f9;">${reports.formatCurrency(unitPrice, 'DC')}</td>
-                        <td class="text-right text-xs" style="border-bottom:1px dashed #f1f5f9;">${reports.formatCurrency(cost, 'DI')}</td>
+                    <tr style="page-break-inside: avoid;">
+                        <td class="font-bold" style="padding-top: 15px;">${parent.code}</td>
+                        <td style="padding-top: 15px;"></td>
+                        <td class="font-bold" style="padding-top: 15px; padding-left: 8px;">${parent.unit || ''}</td>
+                        <td class="font-bold" style="padding-top: 15px;">${parent.summary}${descHtml}</td>
+                        <td style="padding-top: 15px;"></td>
+                        <td style="padding-top: 15px;"></td>
+                        <td style="padding-top: 15px;"></td>
+                    </tr>
+                `;
+                
+                // Filas Hijos
+                parent.children.forEach(child => {
+                    const childConcept = engine.resolveConcept(child.code);
+                    
+                    const dr = engine.metadata.dr || 2;
+                    const dc = engine.metadata.dc || 2;
+                    const di = engine.metadata.di || 2;
+                    
+                    const roundTo = (val, dec) => Math.round((val + 0.00001) * Math.pow(10, dec)) / Math.pow(10, dec);
+                    
+                    const quantity = roundTo(child.factor * child.yield, dr);
+                    const unitPrice = childConcept ? roundTo(childConcept.price, dc) : 0;
+                    const cost = roundTo(quantity * unitPrice, di);
+                    
+                    const cCode = childConcept ? childConcept.code : child.code;
+                    const cSum = childConcept ? childConcept.summary : '<span style="color:red">No encontrado</span>';
+                    const cUnit = childConcept ? childConcept.unit : '';
+                    
+                    content += `
+                        <tr style="page-break-inside: avoid;">
+                            <td>${cCode}</td>
+                            <td class="text-right">${reports.format(quantity, 'DR')}</td>
+                            <td style="padding-left: 8px;">${cUnit}</td>
+                            <td>${cSum}</td>
+                            <td class="text-right">${reports.format(unitPrice, 'DC')}</td>
+                            <td class="text-right">${reports.format(cost, 'DI')}</td>
+                            <td></td>
+                        </tr>
+                    `;
+                });
+
+                // Fila Total y Letra
+                const priceText = reports.numberToText(parent.price);
+                content += `
+                    <tr style="page-break-inside: avoid;">
+                        <td colspan="3"></td>
+                        <td>
+                             <div style="display: flex; align-items: baseline; padding-left: 20%;">
+                                 <span style="font-weight: bold;">TOTAL PARTIDA</span>
+                                 <span style="flex-grow: 1; border-bottom: 1px dotted #000; margin-left: 5px;"></span>
+                             </div>
+                        </td>
+                        <td></td>
+                        <td style="border-top: 1px solid #000;"></td>
+                        <td class="text-right font-bold" style="border-top: 1px solid #000;">${reports.format(parent.price, 'DI')}</td>
+                    </tr>
+                    <tr style="page-break-inside: avoid;">
+                        <td colspan="7" style="padding-top: 5px; padding-bottom: 15px; font-size: 11px;">
+                            Asciende el precio total de la partida a la mencionada cantidad de ${priceText}
+                        </td>
                     </tr>
                 `;
             });
-            
-            content += `</tbody></table></div>`;
-        });
 
-        reports.printHTML(content, "Descompuestos");
+            content += `</tbody></table>`;
+        }
+
+        reports.printHTML(content, "Precios Descompuestos");
     },
 
     // --- MACRO: INFORME DE DESCOMPUESTOS SIN TEXTO LARGO ---
