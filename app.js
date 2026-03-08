@@ -19,7 +19,7 @@ class BC3Engine {
         this.parentMap = new Map(); 
         this.metadata = { 
             owner: '', software: 'BC3 Pro Analyzer', version: 'FIEBDC-3/2016', currency: '€', 
-            dn: 2, dd: 2, ds: 2, dr: 3, di: 2, dp: 2, dc: 2, dm: 2 
+            dn: 2, dd: 2, ds: 2, dr: 4, di: 2, dp: 2, dc: 2, dm: 2 
         };
         this.rootCode = null;
         this.fileName = null; // [NUEVO] Almacena el nombre del fichero original
@@ -431,14 +431,14 @@ class BC3Engine {
             }
         }
         
-        this.metadata.dr = 3;
+        //this.metadata.dr = 3;
         
         this.identifyRoot();
     }
 
     parseK(parts) {
         const subK = parts[1] || '';
-        const tokens = subK.split('\\').map(t => t.trim()).filter(t => t !== "");
+        const tokens = subK.split('\\').map(t => t.trim());
         let numericCount = 0;
         const keys = ['dn','dd','ds','dr','di','dp','dc','dm'];
         for (let token of tokens) {
@@ -722,8 +722,8 @@ class BC3Engine {
         lines.push(`~V|JSBSAN|${this.metadata.version}|BC3 Pro Analyzer||ANSI|`);
         
         // Sincronizamos metadatos para asegurar que el receptor sepa los decimales
-        this.metadata.dr = 3; // Decimales de Rendimiento
-        this.metadata.dc = 2; // Decimales de Coste (Precio)
+        //this.metadata.dr = 4; // Decimales de Rendimiento
+        //this.metadata.dc = 2; // Decimales de Coste (Precio)
 
         const kVals = [
             this.metadata.dn, this.metadata.dd, this.metadata.ds, 
