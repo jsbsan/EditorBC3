@@ -1117,6 +1117,17 @@ const ui = {
                     case 220: tempBuf[i] = 220; break; // Ü
                     case 191: tempBuf[i] = 191; break; // ¿
                     case 161: tempBuf[i] = 161; break; // ¡
+                    // --- NUEVOS CARACTERES: Comillas y Guiones tipográficos ---
+                    case 8220: // “ (Comilla doble curva apertura)
+                    case 8221: // ” (Comilla doble curva cierre)
+                        tempBuf[i] = 34; break; // Se convierte a comilla doble recta (")
+                    case 8216: // ‘ (Comilla simple curva apertura)
+                    case 8217: // ’ (Comilla simple curva cierre)
+                        tempBuf[i] = 39; break; // Se convierte a comilla simple recta (')
+                    case 8211: // – (Guion corto)
+                    case 8212: // — (Guion largo)
+                        tempBuf[i] = 45; break; // Se convierte a guion normal (-)
+
                     default: tempBuf[i] = 63; // ? 
                 }
             }
