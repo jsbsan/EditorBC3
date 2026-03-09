@@ -660,11 +660,25 @@ const reports = {
                 <tbody>
         `;
 
+        const uniqueItems = new Map();
+
+        const collectNodes = (concept, parentCode, level, isChapter) => {
+            if (isChapter) return; 
+            if (!uniqueItems.has(concept.code)) {
+                uniqueItems.set(concept.code, concept);
+            }
+        };
+
+        if(engine.rootCode) {
+            reports.traverseTree(engine.rootCode, null, 0, collectNodes);
+        }
+
+        // Ordenar las partidas por código
+        const sortedItems = Array.from(uniqueItems.values()).sort((a, b) => a.code.localeCompare(b.code));
+
         let counter = 1;
 
-        const processNode = (concept, parentCode, level, isChapter) => {
-            if (isChapter) return; 
-
+        sortedItems.forEach(concept => {
             const nString = counter.toString().padStart(4, '0');
             
             let itemText = "";
@@ -694,11 +708,7 @@ const reports = {
                 </tr>
             `;
             counter++;
-        };
-
-        if(engine.rootCode) {
-            reports.traverseTree(engine.rootCode, null, 0, processNode);
-        }
+        });
 
         content += `
                 </tbody>
@@ -715,6 +725,24 @@ const reports = {
         
         content += `
             <style>
+                .cp2-container { width: 100%; font-family: 'Arial', sans-serif; font-size: 11px; }
+                .cp2-row { display: flex; margin-bottom: 25px; page-break-inside: avoid; border-bottom: 1px solid #eee; padding-bottom: 15px; }
+                .cp2-col-idx { width: 40px; text-align: center; font-weight: bold; padding-top: 2px; }
+                .cp2-col-code { width: 90px; font-weight: bold; font-family: 'Consolas', monospace; padding-top: 2px; }
+                .cp2-col-unit { width: 40px; text-align: center; font-style: italic; padding-top: 2px; }
+                .cp2-col-body { flex: 1; padding-left: 15px; }
+                .cp2-desc { text-align: justify; margin-bottom: 15px; line-height: 1.5; color: #111; }
+                
+                .cp2-breakdown { width: 100%; max-width: 380px; margin-left: auto; font-size: 11px; }
+                .cp2-line { display: flex; align-items: baseline; margin-bottom: 4px; }
+                .cp2-label { flex: 0 0 auto; }
+                /* Puntos suspensivos usando flex-grow y borde inferior */
+                .cp2-dots { flex: 1 1 auto; border-bottom: 1px dotted #000; margin: 0 4px; position: relative; top: -4px; opacity: 0.5; }
+                .cp2-val { flex: 0 0 auto; text-align: right; width: 70px; }
+                
+                .cp2-sep { border-top: 1px solid #000; margin-top: 5px; margin-bottom: 5px; margin-left: auto; width: 100%; }
+                
+                .cp2-total-line { margin-top: 5px; font-weight: bold; font-size: 12px; }
                 .price2-table { width: 100%; border-collapse: collapse; font-family: 'Arial', sans-serif; font-size: 11px; margin-bottom: 20px; }
                 .price2-table th { border-top: 1px solid #000; border-bottom: 1px solid #000; padding: 6px 4px; text-align: left; background: transparent; color: #000; font-size: 10px; font-weight: bold; text-transform: uppercase; }
                 .price2-table td { padding: 4px 4px; vertical-align: top; border-bottom: none; color: #000; }
@@ -732,11 +760,25 @@ const reports = {
                 <tbody>
         `;
 
+        const uniqueItems = new Map();
+
+        const collectNodes = (concept, parentCode, level, isChapter) => {
+            if (isChapter) return; 
+            if (!uniqueItems.has(concept.code)) {
+                uniqueItems.set(concept.code, concept);
+            }
+        };
+
+        if(engine.rootCode) {
+            reports.traverseTree(engine.rootCode, null, 0, collectNodes);
+        }
+
+        // Ordenar las partidas por código
+        const sortedItems = Array.from(uniqueItems.values()).sort((a, b) => a.code.localeCompare(b.code));
+
         let counter = 1;
 
-        const processNode = (concept, parentCode, level, isChapter) => {
-            if (isChapter) return; 
-
+        sortedItems.forEach(concept => {
             const nString = counter.toString().padStart(4, '0');
             
             let itemText = "";
@@ -858,11 +900,7 @@ const reports = {
                     </tr>
             `;
             counter++;
-        };
-
-        if(engine.rootCode) {
-            reports.traverseTree(engine.rootCode, null, 0, processNode);
-        }
+        });
 
         content += `
                 </tbody>
