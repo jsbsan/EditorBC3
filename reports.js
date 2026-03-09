@@ -837,12 +837,18 @@ const reports = {
         content += `<div class="meta">PROYECTO: ${reports.cleanCode(engine.rootCode)} | DIVISA: ${engine.metadata.currency}</div>`;
         
         content += `
-            <table>
+            <style>
+                .basic-table { width: 100%; border-collapse: collapse; font-family: 'Arial', sans-serif; font-size: 11px; margin-bottom: 20px; }
+                .basic-table th { border-top: 1px solid #000; border-bottom: 1px solid #000; padding: 6px 4px; text-align: left; background: transparent; color: #000; font-size: 10px; font-weight: bold; text-transform: uppercase; }
+                .basic-table td { padding: 4px 4px; vertical-align: top; border-bottom: none; color: #000; }
+            </style>
+            <table class="basic-table">
                 <thead>
                     <tr>
-                        <th width="15%">Código</th>
-                        <th width="65%">Descripción</th>
-                        <th width="20%" class="text-right">Precio</th>
+                        <th width="12%">CÓDIGO</th>
+                        <th width="5%" class="text-center">UD</th>
+                        <th width="71%">RESUMEN</th>
+                        <th width="12%" class="text-right">PRECIO</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -853,15 +859,16 @@ const reports = {
             .sort((a, b) => a.code.localeCompare(b.code));
 
         if (resources.length === 0) {
-             content += `<tr><td colspan="3" class="text-center italic" style="padding:20px;">No se encontraron elementos de tipo ${typeName}</td></tr>`;
+             content += `<tr><td colspan="4" class="text-center italic" style="padding:20px;">No se encontraron elementos de tipo ${typeName}</td></tr>`;
         }
 
         resources.forEach(res => {
              content += `
-                <tr>
-                    <td class="font-mono font-bold">${reports.cleanCode(res.code)}</td>
+                <tr style="page-break-inside: avoid;">
+                    <td class="font-bold">${reports.cleanCode(res.code)}</td>
+                    <td class="text-center">${res.unit || ''}</td>
                     <td>${res.summary}</td>
-                    <td class="text-right font-bold">${reports.formatCurrency(res.price, 'DC')}</td>
+                    <td class="text-right">${reports.format(res.price, 'DC')}</td>
                 </tr>
             `;
         });
@@ -923,15 +930,20 @@ const reports = {
         });
 
         content += `
-            <table>
+            <style>
+                .needs-table { width: 100%; border-collapse: collapse; font-family: 'Arial', sans-serif; font-size: 11px; margin-bottom: 20px; }
+                .needs-table th { border-top: 1px solid #000; border-bottom: 1px solid #000; padding: 6px 4px; text-align: left; background: transparent; color: #000; font-size: 10px; font-weight: bold; text-transform: uppercase; }
+                .needs-table td { padding: 4px 4px; vertical-align: top; border-bottom: none; color: #000; }
+            </style>
+            <table class="needs-table">
                 <thead>
                     <tr>
-                        <th width="12%">Código</th>
-                        <th width="40%">Descripción</th>
-                        <th width="8%" class="text-center">Tipo</th>
-                        <th width="13%" class="text-right">Precio Unit.</th>
-                        <th width="12%" class="text-right">Total Ud.</th>
-                        <th width="15%" class="text-right">Importe Total</th>
+                        <th width="12%">CÓDIGO</th>
+                        <th width="10%" class="text-right">CANTIDAD</th>
+                        <th width="5%" style="padding-left: 8px;">UD</th>
+                        <th width="53%">RESUMEN</th>
+                        <th width="10%" class="text-right">PRECIO</th>
+                        <th width="10%" class="text-right">IMPORTE</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -960,9 +972,10 @@ const reports = {
             if (orderGroup !== currentTypeGroup) {
                 if (currentTypeGroup !== -1) {
                      content += `
-                        <tr style="background-color: #f1f5f9; font-weight: bold; font-size: 10px; border-top: 1px solid #cbd5e1;">
-                            <td colspan="5" class="text-right" style="padding: 6px 8px; text-transform: uppercase; color: #475569;">Subtotal ${typeNames[currentTypeGroup]}:</td>
-                            <td class="text-right" style="padding: 6px 8px; color: #1e3a8a;">${reports.formatCurrency(groupSubtotal, 'DI')}</td>
+                        <tr style="page-break-inside: avoid;">
+                            <td colspan="4"></td>
+                            <td class="text-right" style="padding-top: 8px; padding-bottom: 15px; font-weight: bold; text-transform: uppercase;">Subtotal ${typeNames[currentTypeGroup]}:</td>
+                            <td class="text-right font-bold" style="padding-top: 8px; padding-bottom: 15px;">${reports.format(groupSubtotal, 'DI')}</td>
                         </tr>
                     `;
                     grandTotal += groupSubtotal;
@@ -971,8 +984,10 @@ const reports = {
 
                 currentTypeGroup = orderGroup;
                 content += `
-                    <tr style="background-color: #e2e8f0; font-weight: bold; text-transform: uppercase; font-size: 10px;">
-                        <td colspan="6" style="padding: 6px 8px; border-top: 2px solid #cbd5e1; color: #334155;">${typeNames[orderGroup]}</td>
+                    <tr style="page-break-inside: avoid;">
+                        <td colspan="6" style="padding-top: 10px; padding-bottom: 5px; font-weight: bold; text-transform: uppercase; font-size: 10px;">
+                            ${typeNames[orderGroup]}
+                        </td>
                     </tr>
                 `;
             }
@@ -980,31 +995,37 @@ const reports = {
             groupSubtotal += totalCost;
 
             content += `
-                <tr>
-                    <td class="font-mono text-xs">${reports.cleanCode(item.concept.code)}</td>
-                    <td class="text-xs">${item.concept.summary}</td>
-                    <td class="text-center text-xs text-slate-400">${item.concept.type}</td>
-                    <td class="text-right text-xs">${reports.formatCurrency(item.concept.price, 'DC')}</td>
-                    <td class="text-right text-xs font-bold">${reports.format(item.totalQty, 'DR')} ${item.concept.unit}</td>
-                    <td class="text-right text-xs font-black">${reports.formatCurrency(totalCost, 'DI')}</td>
+                <tr style="page-break-inside: avoid;">
+                    <td>${reports.cleanCode(item.concept.code)}</td>
+                    <td class="text-right">${reports.format(item.totalQty, 'DR')}</td>
+                    <td style="padding-left: 8px;">${item.concept.unit || ''}</td>
+                    <td>${item.concept.summary}</td>
+                    <td class="text-right">${reports.format(item.concept.price, 'DC')}</td>
+                    <td class="text-right">${reports.format(totalCost, 'DI')}</td>
                 </tr>
             `;
         });
 
         if (currentTypeGroup !== -1) {
              content += `
-                <tr style="background-color: #f1f5f9; font-weight: bold; font-size: 10px; border-top: 1px solid #cbd5e1;">
-                    <td colspan="5" class="text-right" style="padding: 6px 8px; text-transform: uppercase; color: #475569;">Subtotal ${typeNames[currentTypeGroup]}:</td>
-                    <td class="text-right" style="padding: 6px 8px; color: #1e3a8a;">${reports.formatCurrency(groupSubtotal, 'DI')}</td>
+                <tr style="page-break-inside: avoid;">
+                    <td colspan="4"></td>
+                    <td class="text-right" style="padding-top: 8px; padding-bottom: 15px; font-weight: bold; text-transform: uppercase;">Subtotal ${typeNames[currentTypeGroup]}:</td>
+                    <td class="text-right font-bold" style="padding-top: 8px; padding-bottom: 15px;">${reports.format(groupSubtotal, 'DI')}</td>
                 </tr>
             `;
             grandTotal += groupSubtotal;
         }
 
         content += `
-            <tr style="background-color: #1e3a8a; color: white; font-weight: bold; font-size: 12px; border-top: 3px double white;">
-                <td colspan="5" class="text-right" style="padding: 10px; text-transform: uppercase;">TOTAL NECESIDADES DE OBRA:</td>
-                <td class="text-right" style="padding: 10px;">${reports.formatCurrency(grandTotal, 'DI')}</td>
+            <tr style="page-break-inside: avoid;">
+                <td colspan="4"></td>
+                <td class="text-right" style="padding-top: 15px; padding-bottom: 15px; font-weight: bold; font-size: 12px; border-top: 1px solid #000;">
+                    TOTAL NECESIDADES
+                </td>
+                <td class="text-right font-bold" style="padding-top: 15px; padding-bottom: 15px; font-size: 12px; border-top: 1px solid #000;">
+                    ${reports.format(grandTotal, 'DI')}
+                </td>
             </tr>
         `;
 
@@ -1372,11 +1393,16 @@ const reports = {
             content += `<p class="text-center italic" style="padding:20px;">No se encontraron partidas descompuestas sin texto largo.</p>`;
         } else {
             content += `
-                <table>
+                <style>
+                    .basic-table { width: 100%; border-collapse: collapse; font-family: 'Arial', sans-serif; font-size: 11px; margin-bottom: 20px; }
+                    .basic-table th { border-top: 1px solid #000; border-bottom: 1px solid #000; padding: 6px 4px; text-align: left; background: transparent; color: #000; font-size: 10px; font-weight: bold; text-transform: uppercase; }
+                    .basic-table td { padding: 4px 4px; vertical-align: top; border-bottom: none; color: #000; }
+                </style>
+                <table class="basic-table">
                     <thead>
                         <tr>
-                            <th width="20%">Código</th>
-                            <th width="80%">Resumen (Nombre corto)</th>
+                            <th width="20%">CÓDIGO</th>
+                            <th width="80%">RESUMEN (NOMBRE CORTO)</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -1384,9 +1410,9 @@ const reports = {
             
             missingTextItems.forEach(item => {
                 content += `
-                    <tr>
-                        <td class="font-mono text-xs font-bold" style="border-bottom:1px dashed #e2e8f0;">${reports.cleanCode(item.code)}</td>
-                        <td class="text-xs" style="border-bottom:1px dashed #e2e8f0;">${item.summary}</td>
+                    <tr style="page-break-inside: avoid;">
+                        <td class="font-bold">${reports.cleanCode(item.code)}</td>
+                        <td>${item.summary}</td>
                     </tr>
                 `;
             });
@@ -1414,12 +1440,18 @@ const reports = {
              content += `<p class="text-center italic" style="padding:20px;">No se encontraron partidas.</p>`;
         } else {
              content += `
-                <table>
+                <style>
+                    .basic-table { width: 100%; border-collapse: collapse; font-family: 'Arial', sans-serif; font-size: 11px; margin-bottom: 20px; }
+                    .basic-table th { border-top: 1px solid #000; border-bottom: 1px solid #000; padding: 6px 4px; text-align: left; background: transparent; color: #000; font-size: 10px; font-weight: bold; text-transform: uppercase; }
+                    .basic-table td { padding: 4px 4px; vertical-align: top; border-bottom: none; color: #000; }
+                </style>
+                <table class="basic-table">
                     <thead>
                         <tr>
-                            <th width="15%">Código</th>
-                            <th width="10%" class="text-center">Ud</th>
-                            <th width="75%">Resumen (Nombre corto)</th>
+                            <th width="12%">CÓDIGO</th>
+                            <th width="5%" class="text-center">UD</th>
+                            <th width="71%">RESUMEN</th>
+                            <th width="12%" class="text-right">PRECIO</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -1427,10 +1459,11 @@ const reports = {
 
             items.forEach(item => {
                 content += `
-                    <tr>
-                        <td class="font-mono text-xs font-bold" style="border-bottom:1px dashed #e2e8f0;">${reports.cleanCode(item.code)}</td>
-                        <td class="text-center text-xs text-slate-500" style="border-bottom:1px dashed #e2e8f0;">${item.unit || ''}</td>
-                        <td class="text-xs" style="border-bottom:1px dashed #e2e8f0;">${item.summary}</td>
+                    <tr style="page-break-inside: avoid;">
+                        <td class="font-bold">${reports.cleanCode(item.code)}</td>
+                        <td class="text-center">${item.unit || ''}</td>
+                        <td>${item.summary}</td>
+                        <td class="text-right">${reports.format(item.price, 'DC')}</td>
                     </tr>
                 `;
             });

@@ -577,10 +577,10 @@ Quiero que el reporte de presupuestos sea similar a la imagen que te adjunto. AÃ
 
 **pendiente**
 LISTADOS "CLASICOS":
-- MANO DE OBRA
-- MAQUINARIA
-- MATERIALES
-- NECESIDADES DE MANO DE OBRA
+- MANO DE OBRA -> OK
+- MAQUINARIA -> OK
+- MATERIALES -> OK
+- NECESIDADES (mano de obra, materiales, maquinaria, otros) -> OK
 - DESCOMPUESTOS -> OK
 - MEDICIONES -> OK
 - CUADROS DE PRECIOS NÂº 1
