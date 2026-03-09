@@ -1,7 +1,7 @@
 /**
  * PROYECTO: Visor Profesional FIEBDC-3 (BC3)
  * MODULO: Generador de Listados Jerárquicos
- * VERSION: 3.91 (Códigos limpios sin # en los listados)
+ * VERSION: 3.92 (Listado de Necesidades aplanado y rediseñado)
  * DESCRIPCION: 
  * - [CORRECCION] Restaurado el formato legible del código (indentación y saltos de línea).
  * - [LOGICA] Mantiene el algoritmo de cálculo modificado para CP2.
@@ -11,6 +11,7 @@
  * - [MEJORA] Los listados ahora usan el parámetro 'DR' del registro ~K para los decimales de rendimiento.
  * - [MEJORA] Cálculo estricto de totalCost en listados de Necesidades basando el producto en factores pre-redondeados.
  * - [MEJORA] Eliminación visual del carácter interno '#' en todos los códigos al generar los informes.
+ * - [MEJORA] Rediseño de Listado de Necesidades (lista plana ordenada por código sin subtotales de grupo, y cabecera unida CANTIDAD UD).
  */
 
 const reports = {
@@ -137,7 +138,7 @@ const reports = {
         if (decimalPart > 0) {
             let decimalWords = convertGroup(decimalPart).trim();
             decimalWords = decimalWords.replace(/UN $/, 'UNO '); 
-            result += ' CON ' + decimalWords + ' CÉNTIMOS';
+            result += ' con ' + decimalWords + ' CÉNTIMOS';
         }
 
         return result;
@@ -640,13 +641,20 @@ const reports = {
         content += `<div class="meta">PROYECTO: ${reports.cleanCode(engine.rootCode)} | DIVISA: ${engine.metadata.currency}</div>`;
         
         content += `
-            <table>
+            <style>
+                .price1-table { width: 100%; border-collapse: collapse; font-family: 'Arial', sans-serif; font-size: 11px; margin-bottom: 20px; }
+                .price1-table th { border-top: 1px solid #000; border-bottom: 1px solid #000; padding: 6px 4px; text-align: left; background: transparent; color: #000; font-size: 10px; font-weight: bold; text-transform: uppercase; }
+                .price1-table td { padding: 4px 4px; vertical-align: top; border-bottom: none; color: #000; }
+            </style>
+            <table class="price1-table">
                 <thead>
                     <tr>
                         <th width="5%" class="text-center">Nº</th>
-                        <th width="15%">Código</th>
-                        <th width="60%">Designación de las Obras</th>
-                        <th width="20%" class="text-right">Precio</th>
+                        <th width="12%">CÓDIGO</th>
+                        <th width="5%">UD</th>
+                        <th width="48%">RESUMEN</th>
+                        <th width="20%">PRECIO EN LETRA</th>
+                        <th width="10%" class="text-right">IMPORTE</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -657,10 +665,10 @@ const reports = {
         const processNode = (concept, parentCode, level, isChapter) => {
             if (isChapter) return; 
 
-            const nString = counter.toString().padStart(2, '0');
+            const nString = counter.toString().padStart(4, '0');
             
             let itemText = "";
-            if (concept.description) {
+            if (concept.description && concept.description.trim().length > 0) {
                 itemText = `<span style="font-weight:normal;">${reports.escapeHtml(concept.description).replace(/\n/g, '<br>')}</span>`;
             } else {
                 itemText = `<span>${concept.summary}</span>`;
@@ -669,16 +677,20 @@ const reports = {
             const priceText = reports.numberToText(concept.price);
 
             content += `
-                <tr class="no-break">
-                    <td class="text-center font-bold text-xs" style="vertical-align:top; padding-top:8px;">${nString}</td>
-                    <td class="font-mono font-bold" style="vertical-align:top; padding-top:8px;">${reports.cleanCode(concept.code)}</td>
-                    <td>
-                        ${itemText}
-                        <span class="price-letter">Asciende el precio unitario a la expresada cantidad de ${priceText}</span>
+                <tr style="page-break-inside: avoid;">
+                    <td class="text-center" style="padding-top: 12px;">${nString}</td>
+                    <td style="padding-top: 12px;">${reports.cleanCode(concept.code)}</td>
+                    <td style="padding-top: 12px;">${concept.unit || ''}</td>
+                    <td style="padding-top: 12px; text-align: justify;">${itemText}</td>
+                    <td style="padding-top: 12px;"></td>
+                    <td class="text-right" style="padding-top: 12px;">${reports.format(concept.price, 'DC')}</td>
+                </tr>
+                <tr style="page-break-inside: avoid;">
+                    <td colspan="3"></td>
+                    <td colspan="2" class="text-right" style="padding-bottom: 12px; text-transform: uppercase; font-size: 11px;">
+                        ${priceText}
                     </td>
-                    <td class="text-right" style="vertical-align:top; padding-top:8px;">
-                        <span class="price-number">${reports.formatCurrency(concept.price, 'DC')}</span>
-                    </td>
+                    <td></td>
                 </tr>
             `;
             counter++;
@@ -703,25 +715,21 @@ const reports = {
         
         content += `
             <style>
-                .cp2-container { width: 100%; font-family: 'Arial', sans-serif; font-size: 11px; }
-                .cp2-row { display: flex; margin-bottom: 25px; page-break-inside: avoid; border-bottom: 1px solid #eee; padding-bottom: 15px; }
-                .cp2-col-idx { width: 40px; text-align: center; font-weight: bold; padding-top: 2px; }
-                .cp2-col-code { width: 90px; font-weight: bold; font-family: 'Consolas', monospace; padding-top: 2px; }
-                .cp2-col-unit { width: 40px; text-align: center; font-style: italic; padding-top: 2px; }
-                .cp2-col-body { flex: 1; padding-left: 15px; }
-                .cp2-desc { text-align: justify; margin-bottom: 15px; line-height: 1.5; color: #111; }
-                
-                .cp2-breakdown { width: 100%; max-width: 380px; margin-left: auto; font-size: 11px; }
-                .cp2-line { display: flex; align-items: baseline; margin-bottom: 4px; }
-                .cp2-label { flex: 0 0 auto; }
-                /* Puntos suspensivos usando flex-grow y borde inferior */
-                .cp2-dots { flex: 1 1 auto; border-bottom: 1px dotted #000; margin: 0 4px; position: relative; top: -4px; opacity: 0.5; }
-                .cp2-val { flex: 0 0 auto; text-align: right; width: 70px; }
-                
-                .cp2-sep { border-top: 1px solid #000; margin-top: 5px; margin-bottom: 5px; margin-left: auto; width: 100%; }
-                
-                .cp2-total-line { margin-top: 5px; font-weight: bold; font-size: 12px; }
+                .price2-table { width: 100%; border-collapse: collapse; font-family: 'Arial', sans-serif; font-size: 11px; margin-bottom: 20px; }
+                .price2-table th { border-top: 1px solid #000; border-bottom: 1px solid #000; padding: 6px 4px; text-align: left; background: transparent; color: #000; font-size: 10px; font-weight: bold; text-transform: uppercase; }
+                .price2-table td { padding: 4px 4px; vertical-align: top; border-bottom: none; color: #000; }
             </style>
+            <table class="price2-table">
+                <thead>
+                    <tr>
+                        <th width="5%" class="text-center">Nº</th>
+                        <th width="12%">CÓDIGO</th>
+                        <th width="5%">UD</th>
+                        <th width="63%">RESUMEN</th>
+                        <th width="15%" class="text-right">IMPORTE</th>
+                    </tr>
+                </thead>
+                <tbody>
         `;
 
         let counter = 1;
@@ -731,9 +739,12 @@ const reports = {
 
             const nString = counter.toString().padStart(4, '0');
             
-            let itemText = concept.description 
-                ? reports.escapeHtml(concept.description).replace(/\n/g, '<br>')
-                : concept.summary;
+            let itemText = "";
+            if (concept.description && concept.description.trim().length > 0) {
+                itemText = `<span style="font-weight:normal;">${reports.escapeHtml(concept.description).replace(/\n/g, '<br>')}</span>`;
+            } else {
+                itemText = `<span>${concept.summary}</span>`;
+            }
 
             let totalMO = 0; 
             let totalMQ = 0; 
@@ -777,48 +788,74 @@ const reports = {
                 else totalResto = concept.price;
             }
 
-            const fmt = (n) => reports.fmtTwoDecimals(n);
+            const fmt = (n) => reports.format(n, 'DI');
 
             content += `
-                <div class="cp2-row">
-                    <div class="cp2-col-idx">${nString}</div>
-                    <div class="cp2-col-code">${reports.cleanCode(concept.code)}</div>
-                    <div class="cp2-col-unit">${concept.unit || ''}</div>
-                    <div class="cp2-col-body">
-                        <div class="cp2-desc">${itemText}</div>
-                        
-                        <div class="cp2-breakdown">
-                            ${totalMO > 0 ? `
-                            <div class="cp2-line">
-                                <span class="cp2-label">Mano de obra</span>
-                                <span class="cp2-dots"></span>
-                                <span class="cp2-val">${fmt(totalMO)}</span>
-                            </div>` : ''}
-                            
-                            ${totalMQ > 0 ? `
-                            <div class="cp2-line">
-                                <span class="cp2-label">Maquinaria</span>
-                                <span class="cp2-dots"></span>
-                                <span class="cp2-val">${fmt(totalMQ)}</span>
-                            </div>` : ''}
-                            
-                            ${totalResto > 0 ? `
-                            <div class="cp2-line">
-                                <span class="cp2-label">Resto de obra y materiales</span>
-                                <span class="cp2-dots"></span>
-                                <span class="cp2-val">${fmt(totalResto)}</span>
-                            </div>` : ''}
+                <tr style="page-break-inside: avoid;">
+                    <td class="text-center" style="padding-top: 15px;">${nString}</td>
+                    <td style="padding-top: 15px;">${reports.cleanCode(concept.code)}</td>
+                    <td style="padding-top: 15px;">${concept.unit || ''}</td>
+                    <td style="padding-top: 15px; text-align: justify; padding-bottom: 10px;">${itemText}</td>
+                    <td style="padding-top: 15px;"></td>
+                </tr>
+            `;
 
-                            <div class="cp2-sep"></div>
-
-                            <div class="cp2-line cp2-total-line">
-                                <span class="cp2-label">TOTAL PARTIDA</span>
-                                <span class="cp2-dots"></span>
-                                <span class="cp2-val">${fmt(concept.price)}</span>
+            if (totalMO > 0) {
+                content += `
+                    <tr style="page-break-inside: avoid;">
+                        <td colspan="3"></td>
+                        <td>
+                            <div style="display: flex; align-items: baseline; padding-left: 50%;">
+                                <span>Mano de obra</span>
+                                <span style="flex-grow: 1; border-bottom: 1px dotted #000; margin-left: 5px;"></span>
                             </div>
-                        </div>
-                    </div>
-                </div>
+                        </td>
+                        <td class="text-right">${fmt(totalMO)}</td>
+                    </tr>
+                `;
+            }
+
+            if (totalMQ > 0) {
+                content += `
+                    <tr style="page-break-inside: avoid;">
+                        <td colspan="3"></td>
+                        <td>
+                            <div style="display: flex; align-items: baseline; padding-left: 50%;">
+                                <span>Maquinaria</span>
+                                <span style="flex-grow: 1; border-bottom: 1px dotted #000; margin-left: 5px;"></span>
+                            </div>
+                        </td>
+                        <td class="text-right">${fmt(totalMQ)}</td>
+                    </tr>
+                `;
+            }
+
+            if (totalResto > 0) {
+                content += `
+                    <tr style="page-break-inside: avoid;">
+                        <td colspan="3"></td>
+                        <td>
+                            <div style="display: flex; align-items: baseline; padding-left: 50%;">
+                                <span>Resto de obra y materiales</span>
+                                <span style="flex-grow: 1; border-bottom: 1px dotted #000; margin-left: 5px;"></span>
+                            </div>
+                        </td>
+                        <td class="text-right">${fmt(totalResto)}</td>
+                    </tr>
+                `;
+            }
+
+            content += `
+                    <tr style="page-break-inside: avoid;">
+                        <td colspan="3"></td>
+                        <td style="padding-top: 5px; padding-bottom: 15px;">
+                            <div style="display: flex; align-items: baseline; padding-left: 50%;">
+                                <span style="font-weight: bold;">TOTAL PARTIDA</span>
+                                <span style="flex-grow: 1; border-bottom: 1px dotted #000; margin-left: 5px;"></span>
+                            </div>
+                        </td>
+                        <td class="text-right font-bold" style="padding-top: 5px; padding-bottom: 15px; border-top: 1px solid #000;">${reports.format(concept.price, 'DI')}</td>
+                    </tr>
             `;
             counter++;
         };
@@ -826,6 +863,11 @@ const reports = {
         if(engine.rootCode) {
             reports.traverseTree(engine.rootCode, null, 0, processNode);
         }
+
+        content += `
+                </tbody>
+            </table>
+        `;
 
         reports.printHTML(content, "Cuadro de Precios Nº 2");
     },
@@ -919,15 +961,9 @@ const reports = {
         }
 
         const list = Array.from(needsMap.values()).filter(item => Math.abs(item.totalQty) > 0.0001);
-        const typeOrder = { '1': 1, '3': 2, '2': 3 };
-        const getOrder = (type) => typeOrder[type] || 4;
 
-        list.sort((a, b) => {
-            const orderA = getOrder(a.concept.type);
-            const orderB = getOrder(b.concept.type);
-            if (orderA !== orderB) return orderA - orderB;
-            return a.concept.code.localeCompare(b.concept.code);
-        });
+        // En lugar de ordenar por tipo o agrupar, la imagen muestra una lista plana ordenada por CÓDIGO.
+        list.sort((a, b) => a.concept.code.localeCompare(b.concept.code));
 
         content += `
             <style>
@@ -939,9 +975,8 @@ const reports = {
                 <thead>
                     <tr>
                         <th width="12%">CÓDIGO</th>
-                        <th width="10%" class="text-right">CANTIDAD</th>
-                        <th width="5%" style="padding-left: 8px;">UD</th>
-                        <th width="53%">RESUMEN</th>
+                        <th width="12%" colspan="2">CANTIDAD UD</th>
+                        <th width="56%">RESUMEN</th>
                         <th width="10%" class="text-right">PRECIO</th>
                         <th width="10%" class="text-right">IMPORTE</th>
                     </tr>
@@ -949,14 +984,9 @@ const reports = {
                 <tbody>
         `;
 
-        let currentTypeGroup = -1;
-        let groupSubtotal = 0; 
         let grandTotal = 0;    
-        const typeNames = { 1: 'Mano de Obra', 3: 'Materiales', 2: 'Maquinaria', 4: 'Otros' };
 
         list.forEach(item => {
-            const orderGroup = getOrder(item.concept.type);
-            
             // Extraer configuración de decimales desde los metadatos del BC3
             const dr = engine.metadata.dr || 2;
             const dc = engine.metadata.dc || 2;
@@ -968,54 +998,19 @@ const reports = {
             const roundedPrice = roundTo(item.concept.price, dc);
             
             const totalCost = roundTo(roundedQty * roundedPrice, di);
-            
-            if (orderGroup !== currentTypeGroup) {
-                if (currentTypeGroup !== -1) {
-                     content += `
-                        <tr style="page-break-inside: avoid;">
-                            <td colspan="4"></td>
-                            <td class="text-right" style="padding-top: 8px; padding-bottom: 15px; font-weight: bold; text-transform: uppercase;">Subtotal ${typeNames[currentTypeGroup]}:</td>
-                            <td class="text-right font-bold" style="padding-top: 8px; padding-bottom: 15px;">${reports.format(groupSubtotal, 'DI')}</td>
-                        </tr>
-                    `;
-                    grandTotal += groupSubtotal;
-                    groupSubtotal = 0;
-                }
-
-                currentTypeGroup = orderGroup;
-                content += `
-                    <tr style="page-break-inside: avoid;">
-                        <td colspan="6" style="padding-top: 10px; padding-bottom: 5px; font-weight: bold; text-transform: uppercase; font-size: 10px;">
-                            ${typeNames[orderGroup]}
-                        </td>
-                    </tr>
-                `;
-            }
-
-            groupSubtotal += totalCost;
+            grandTotal += totalCost;
 
             content += `
                 <tr style="page-break-inside: avoid;">
                     <td>${reports.cleanCode(item.concept.code)}</td>
-                    <td class="text-right">${reports.format(item.totalQty, 'DR')}</td>
-                    <td style="padding-left: 8px;">${item.concept.unit || ''}</td>
+                    <td class="text-right" width="8%">${reports.format(item.totalQty, 'DR')}</td>
+                    <td width="4%" style="padding-left: 4px;">${item.concept.unit || ''}</td>
                     <td>${item.concept.summary}</td>
                     <td class="text-right">${reports.format(item.concept.price, 'DC')}</td>
                     <td class="text-right">${reports.format(totalCost, 'DI')}</td>
                 </tr>
             `;
         });
-
-        if (currentTypeGroup !== -1) {
-             content += `
-                <tr style="page-break-inside: avoid;">
-                    <td colspan="4"></td>
-                    <td class="text-right" style="padding-top: 8px; padding-bottom: 15px; font-weight: bold; text-transform: uppercase;">Subtotal ${typeNames[currentTypeGroup]}:</td>
-                    <td class="text-right font-bold" style="padding-top: 8px; padding-bottom: 15px;">${reports.format(groupSubtotal, 'DI')}</td>
-                </tr>
-            `;
-            grandTotal += groupSubtotal;
-        }
 
         content += `
             <tr style="page-break-inside: avoid;">
