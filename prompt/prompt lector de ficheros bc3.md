@@ -573,6 +573,21 @@ Quiero que el reporte de precios descompuestos sea similar a la imagen que te ad
 (le pongo una captura de imagen de un listado de descompuestos generado por presto)
 
 
+**pendiente**
+LISTADOS "CLASICOS":
+- MANO DE OBRA
+- MAQUINARIA
+- MATERIALES
+- NECESIDADES DE MANO DE OBRA
+- DESCOMPUESTOS -> OK
+- MEDICIONES -> OK
+- CUADROS DE PRECIOS Nº 1
+- CUADROS DE PRECIOS Nº 2
+- PRESUPUESTO PARCIALES -> OK
+- RESUMEN DE PRESUPUESTOS
+
+
+
 
 **pendiente**
 - añadir al listado de necesidades % del proyecto que representan y ordenarlas según estas.  

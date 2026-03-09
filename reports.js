@@ -1,7 +1,7 @@
 /**
  * PROYECTO: Visor Profesional FIEBDC-3 (BC3)
  * MODULO: Generador de Listados Jerárquicos
- * VERSION: 3.90 (Cálculos de importes con precisión estricta por metadatos)
+ * VERSION: 3.91 (Códigos limpios sin # en los listados)
  * DESCRIPCION: 
  * - [CORRECCION] Restaurado el formato legible del código (indentación y saltos de línea).
  * - [LOGICA] Mantiene el algoritmo de cálculo modificado para CP2.
@@ -10,6 +10,7 @@
  * - [NUEVO] Informe generatePartidasReport añadido (Solo Partidas).
  * - [MEJORA] Los listados ahora usan el parámetro 'DR' del registro ~K para los decimales de rendimiento.
  * - [MEJORA] Cálculo estricto de totalCost en listados de Necesidades basando el producto en factores pre-redondeados.
+ * - [MEJORA] Eliminación visual del carácter interno '#' en todos los códigos al generar los informes.
  */
 
 const reports = {
@@ -24,6 +25,12 @@ const reports = {
 
     closeListadosModal: () => {
         document.getElementById('modal-reports').classList.remove('active');
+    },
+
+    // Limpia el carácter # de los códigos para su visualización
+    cleanCode: (code) => {
+        if (!code) return "";
+        return code.replace(/#+$/, '');
     },
 
     // Formateador numérico estricto (Coma decimal, Punto millares)
@@ -284,65 +291,74 @@ const reports = {
     // REPORTE 1: MEDICIONES
     generateMeasurementsReport: () => {
         let content = `<h1>Listado de Mediciones</h1>`;
-        content += `<div class="meta">PROYECTO: ${engine.rootCode} | ${engine.metadata.software}</div>`;
+        content += `<div class="meta">PROYECTO: ${reports.cleanCode(engine.rootCode)} | ${engine.metadata.software}</div>`;
         
+        content += `
+            <style>
+                .meas-rep-table { width: 100%; border-collapse: collapse; font-family: 'Arial', sans-serif; font-size: 11px; margin-bottom: 20px; }
+                .meas-rep-table th { border-top: 1px solid #000; border-bottom: 1px solid #000; padding: 6px 4px; text-align: left; background: transparent; color: #000; font-size: 10px; font-weight: bold; text-transform: uppercase; }
+                .meas-rep-table td { padding: 3px 4px; vertical-align: top; border-bottom: none; color: #000; }
+                .chapter-bg { background-color: #cffafe; font-weight: bold; color: #000; }
+                .indent-meas { padding-left: 20px; }
+            </style>
+            <table class="meas-rep-table">
+                <thead>
+                    <tr>
+                        <th width="10%">CÓDIGO</th>
+                        <th width="42%">RESUMEN</th>
+                        <th width="8%" class="text-right">UDS</th>
+                        <th width="8%" class="text-right">LONGITUD</th>
+                        <th width="8%" class="text-right">ANCHURA</th>
+                        <th width="8%" class="text-right">ALTURA</th>
+                        <th width="8%" class="text-right">PARCIALES</th>
+                        <th width="8%" class="text-right">CANTIDAD</th>
+                    </tr>
+                </thead>
+                <tbody>
+        `;
+
         const processNode = (concept, parentCode, level, isChapter) => {
+            if (concept.code === engine.rootCode) return; // Omitimos la raíz como fila normal
+
             if (isChapter) {
-                const indentClass = `indent-${Math.min(level, 5)}`;
                 content += `
-                    <div class="no-break" style="margin-top: 15px; margin-bottom: 5px; border-bottom: 1px solid #333;">
-                        <div class="${indentClass} chapter-row" style="padding: 5px;">
-                            <span class="font-mono font-bold" style="margin-right:10px;">${concept.code}</span>
-                            <span class="chapter-title">${concept.summary}</span>
-                        </div>
-                    </div>
+                    <tr class="chapter-bg" style="page-break-inside: avoid;">
+                        <td class="font-bold" style="padding-top: 6px; padding-bottom: 6px;">${reports.cleanCode(concept.code)}</td>
+                        <td colspan="7" style="padding-top: 6px; padding-bottom: 6px;">${concept.summary}</td>
+                    </tr>
                 `;
-            } 
-            else {
-                const indentClass = `indent-${Math.min(level, 5)}`;
+            } else {
                 const measData = reports.findMeasurementData(concept.code);
                 const hasMeasurements = measData && measData.lines && measData.lines.length > 0;
-                const totalStr = measData ? reports.fmtTwoDecimals(measData.total) : '';
+                
+                let descHtml = '';
+                if (concept.description && concept.description.trim().length > 0) {
+                    descHtml = `<br><span style="font-weight: normal; margin-top: 4px; display: inline-block;">${reports.escapeHtml(concept.description).replace(/\n/g, '<br>')}</span>`;
+                }
 
+                // Cabecera de la Partida (Ud y Descripción integradas)
                 content += `
-                    <div class="no-break" style="margin-top: 10px;">
-                        <table style="margin-bottom: 0;">
-                            <tr class="meas-header-row">
-                                <td width="15%" class="${indentClass} font-mono font-bold">${concept.code}</td>
-                                <td width="70%">
-                                    <span class="font-bold">${concept.summary}</span>
-                                    ${concept.description ? `<br><span style="font-size: 10px; font-style: normal; color: #334155;">${reports.escapeHtml(concept.description).replace(/\n/g, '<br>')}</span>` : ''}
-                                </td>
-                                <td width="15%" class="text-right font-bold bg-white" style="vertical-align: middle;">
-                                    ${totalStr ? `<span class="header-total">${totalStr}</span>` : ''}
-                                    ${concept.unit || ''}
-                                </td>
-                            </tr>
-                        </table>
+                    <tr style="page-break-inside: avoid;">
+                        <td class="font-bold" style="padding-top: 15px;">${reports.cleanCode(concept.code)}</td>
+                        <td colspan="7" style="padding-top: 15px;">
+                            <table style="width:100%; border:none; margin:0; padding:0; background:transparent;">
+                                <tr>
+                                    <td style="width: 30px; padding:0; vertical-align:top;">${concept.unit || ''}</td>
+                                    <td style="padding:0; vertical-align:top; text-align:justify;">
+                                        <span style="font-weight:normal;">${concept.summary}</span>${descHtml}
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
                 `;
 
                 if (hasMeasurements) {
-                    content += `
-                        <table class="subtable">
-                            <thead>
-                                <tr>
-                                    <th width="15%">Tipo</th>
-                                    <th width="35%">Comentario</th>
-                                    <th width="10%" class="text-center">Ud</th>
-                                    <th width="10%" class="text-center">Largo</th>
-                                    <th width="10%" class="text-center">Ancho</th>
-                                    <th width="10%" class="text-center">Alto</th>
-                                    <th width="10%" class="text-right">Parcial</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                    `;
-
                     let subtotal = 0;
                     measData.lines.forEach(m => {
                         let parcial = 0;
                         if (m.type === '1') { 
-                             content += `<tr style="background-color: #fff7ed; font-weight:bold; font-style:italic;"><td colspan="6" class="text-right">${m.comment || 'Subtotal'}:</td><td class="text-right">${reports.fmtTwoDecimals(subtotal)}</td></tr>`;
+                             content += `<tr style="page-break-inside: avoid;"><td colspan="6" class="text-right" style="font-weight:bold; font-style:italic;">${m.comment || 'Subtotal'}:</td><td class="text-right font-bold">${reports.format(subtotal, 'DS')}</td><td></td></tr>`;
                              subtotal = 0; 
                              return;
                         }
@@ -363,37 +379,39 @@ const reports = {
                         subtotal += parcial;
 
                         content += `
-                            <tr>
-                                <td>${m.type}</td>
-                                <td>${m.comment}</td>
-                                <td class="text-center">${m.units !== 0 ? reports.format(m.units, 'DN') : ''}</td>
-                                <td class="text-center">${m.length !== 0 ? reports.format(m.length, 'DD') : ''}</td>
-                                <td class="text-center">${m.width !== 0 ? reports.format(m.width, 'DD') : ''}</td>
-                                <td class="text-center">${m.height !== 0 ? reports.format(m.height, 'DD') : ''}</td>
-                                <td class="text-right">${reports.fmtTwoDecimals(parcial)}</td>
+                            <tr style="page-break-inside: avoid;">
+                                <td></td>
+                                <td class="indent-meas">${m.comment || ''}</td>
+                                <td class="text-right">${m.units !== 0 ? reports.format(m.units, 'DN') : ''}</td>
+                                <td class="text-right">${m.length !== 0 ? reports.format(m.length, 'DD') : ''}</td>
+                                <td class="text-right">${m.width !== 0 ? reports.format(m.width, 'DD') : ''}</td>
+                                <td class="text-right">${m.height !== 0 ? reports.format(m.height, 'DD') : ''}</td>
+                                <td class="text-right">${parcial !== 0 ? reports.format(parcial, 'DS') : ''}</td>
+                                <td></td>
                             </tr>
                         `;
                     });
 
+                    // Total Row
                     content += `
-                            </tbody>
-                            <tfoot>
-                                <tr class="meas-total-row">
-                                    <td colspan="6" class="text-right text-xs uppercase tracking-wide">Total Medición ${concept.code}:</td>
-                                    <td class="text-right font-black">${reports.fmtTwoDecimals(measData.total)}</td>
-                                </tr>
-                            </tfoot>
-                        </table>
+                        <tr style="page-break-inside: avoid;">
+                            <td colspan="6"></td>
+                            <td style="border-top: 1px solid #000; padding-top: 4px;"></td>
+                            <td class="text-right" style="border-top: 1px solid #000; padding-top: 4px;">${reports.format(measData.total, 'DS')}</td>
+                        </tr>
                     `;
                 } else {
                     if (measData && measData.total !== 0) {
                          content += `
-                            <div class="subtable text-right italic text-xs" style="padding:5px; border:none;">
-                                (Sin desglose de líneas)
-                            </div>`;
+                            <tr style="page-break-inside: avoid;">
+                                <td></td>
+                                <td class="indent-meas italic text-xs text-slate-500">(Medición directa)</td>
+                                <td colspan="4"></td>
+                                <td style="border-top: 1px solid #000; padding-top: 4px;"></td>
+                                <td class="text-right" style="border-top: 1px solid #000; padding-top: 4px;">${reports.format(measData.total, 'DS')}</td>
+                            </tr>`;
                     }
                 }
-                content += `</div>`;
             }
         };
 
@@ -401,97 +419,127 @@ const reports = {
             reports.traverseTree(engine.rootCode, null, 0, processNode);
         }
 
+        content += `</tbody></table>`;
         reports.printHTML(content, "Listado de Mediciones");
     },
 
     // REPORTE 2: PRESUPUESTO
     generateBudgetReport: () => {
         let content = `<h1>Presupuesto General</h1>`;
-        content += `<div class="meta">PROYECTO: ${engine.rootCode} | DIVISA: ${engine.metadata.currency}</div>`;
+        content += `<div class="meta">PROYECTO: ${reports.cleanCode(engine.rootCode)} | DIVISA: ${engine.metadata.currency}</div>`;
         
         content += `
-            <table>
+            <style>
+                .budget-table { width: 100%; border-collapse: collapse; font-family: 'Arial', sans-serif; font-size: 11px; margin-bottom: 20px; }
+                .budget-table th { border-top: 1px solid #000; border-bottom: 1px solid #000; padding: 6px 4px; text-align: left; background: transparent; color: #000; font-size: 10px; font-weight: bold; text-transform: uppercase; }
+                .budget-table td { padding: 4px 4px; vertical-align: top; border-bottom: none; color: #000; }
+                .chapter-bg { background-color: #cffafe; font-weight: bold; color: #000; }
+            </style>
+            <table class="budget-table">
                 <thead>
                     <tr>
-                        <th width="12%">Código</th>
-                        <th width="48%">Descripción</th>
-                        <th width="5%" class="text-center">Ud</th>
-                        <th width="12%" class="text-right">Cantidad</th>
-                        <th width="10%" class="text-right">Precio</th>
-                        <th width="13%" class="text-right">Importe</th>
+                        <th width="12%">CÓDIGO</th>
+                        <th width="50%" colspan="2">RESUMEN</th>
+                        <th width="12%" class="text-right">CANTIDAD</th>
+                        <th width="12%" class="text-right">PRECIO</th>
+                        <th width="14%" class="text-right">IMPORTE</th>
                     </tr>
                 </thead>
                 <tbody>
         `;
 
-        const processNode = (concept, parentCode, level, isChapter) => {
-            // Excluir raíz del listado
-            if (concept.code === engine.rootCode) return;
+        const renderNode = (code, parentCode, currentQty) => {
+            const concept = engine.resolveConcept(code);
+            if (!concept) return;
 
-            const indentClass = `indent-${Math.min(level, 5)}`;
-            let cantidad = 0;
-            let importe = 0;
+            const isRoot = code === engine.rootCode;
+            const isChapter = concept.code.endsWith('#') || (!concept.unit && concept.children.length > 0);
+            
+            let importe = engine.round(concept.price * currentQty);
 
-            if (parentCode) {
-                const parent = engine.resolveConcept(parentCode);
-                const childRef = parent.children.find(c => engine.normalizeCode(c.code) === engine.normalizeCode(concept.code));
-                if (childRef) {
-                    cantidad = childRef.factor * childRef.yield;
-                }
+            if (isRoot) {
+                // Renderizar los hijos del proyecto
+                concept.children.forEach(child => {
+                    const qty = child.factor * child.yield;
+                    renderNode(child.code, code, qty);
+                });
+                
+                // Imprimir el Total Final
+                content += `
+                    <tr style="page-break-inside: avoid;">
+                        <td colspan="5" style="padding-top: 20px; padding-bottom: 15px;">
+                            <div style="display: flex; align-items: baseline;">
+                                <span style="font-weight: bold; font-size: 12px; text-transform: uppercase;">TOTAL PRESUPUESTO DE EJECUCIÓN MATERIAL</span>
+                                <span style="flex-grow: 1; border-bottom: 1px dotted #000; margin-left: 5px;"></span>
+                            </div>
+                        </td>
+                        <td class="text-right font-bold" style="font-size: 12px; padding-top: 20px; padding-bottom: 15px; border-bottom: 2px solid #000; border-top: 2px solid #000;">${reports.formatCurrency(concept.price, 'DI')}</td>
+                    </tr>
+                `;
+                return;
+            }
+
+            if (isChapter) {
+                // Imprimir Cabecera del Capítulo/Subcapítulo
+                content += `
+                    <tr class="chapter-bg" style="page-break-inside: avoid;">
+                        <td class="font-bold" style="padding-top: 6px; padding-bottom: 6px;">${reports.cleanCode(concept.code)}</td>
+                        <td colspan="5" style="padding-top: 6px; padding-bottom: 6px; font-weight: bold;">${concept.summary}</td>
+                    </tr>
+                `;
+                
+                // Renderizar los hijos del Capítulo
+                concept.children.forEach(child => {
+                    const qty = child.factor * child.yield;
+                    renderNode(child.code, code, qty);
+                });
+
+                // Imprimir Total del Capítulo/Subcapítulo
+                content += `
+                    <tr style="page-break-inside: avoid;">
+                        <td colspan="5" style="padding-top: 10px; padding-bottom: 15px;">
+                            <div style="display: flex; align-items: baseline; padding-left: 5%;">
+                                <span style="font-weight: bold;">TOTAL ${reports.cleanCode(concept.code)} ${concept.summary}</span>
+                                <span style="flex-grow: 1; border-bottom: 1px dotted #000; margin-left: 5px;"></span>
+                            </div>
+                        </td>
+                        <td class="text-right font-bold" style="padding-top: 10px; padding-bottom: 15px; border-bottom: 1px solid #000;">${reports.format(importe, 'DI')}</td>
+                    </tr>
+                `;
             } else {
-                cantidad = 1; 
+                // Imprimir Partida Simple o Descompuesta (Fila de Presupuesto)
+                let descHtml = '';
+                if (concept.description && concept.description.trim().length > 0) {
+                    descHtml = `<br><span style="font-weight: normal; margin-top: 4px; display: inline-block; text-align: justify;">${reports.escapeHtml(concept.description).replace(/\n/g, '<br>')}</span>`;
+                }
+                
+                content += `
+                    <tr style="page-break-inside: avoid;">
+                        <td class="font-bold" style="padding-top: 8px; padding-bottom: 8px;">${reports.cleanCode(concept.code)}</td>
+                        <td width="3%" style="padding-top: 8px; padding-bottom: 8px;">${concept.unit || ''}</td>
+                        <td width="47%" style="padding-top: 8px; padding-bottom: 8px;">
+                            <span style="font-weight: normal;">${concept.summary}</span>${descHtml}
+                        </td>
+                        <td class="text-right" style="padding-top: 8px; padding-bottom: 8px;">${reports.format(currentQty, 'DN')}</td>
+                        <td class="text-right" style="padding-top: 8px; padding-bottom: 8px;">${reports.format(concept.price, 'DC')}</td>
+                        <td class="text-right font-bold" style="padding-top: 8px; padding-bottom: 8px;">${reports.format(importe, 'DI')}</td>
+                    </tr>
+                `;
             }
-
-            importe = engine.round(concept.price * cantidad);
-
-            const rowClass = isChapter ? 'chapter-row' : 'item-row';
-            const fontClass = isChapter ? 'font-bold' : '';
-            
-            let descText = concept.summary;
-            let descExtra = "";
-            
-            if (!isChapter && concept.description) {
-                descExtra = `<br><span style="font-size: 10px; font-style: normal; color:#334155; font-weight:normal;">${reports.escapeHtml(concept.description).replace(/\n/g, ' ')}</span>`;
-            }
-
-            content += `
-                <tr class="${rowClass}">
-                    <td class="font-mono ${fontClass} ${indentClass}">${concept.code}</td>
-                    <td class="${fontClass}">
-                        ${descText}
-                        ${descExtra}
-                    </td>
-                    <td class="text-center text-xs">${concept.unit || ''}</td>
-                    <td class="text-right ${fontClass}">${reports.format(cantidad, 'DN')}</td>
-                    <td class="text-right">${reports.format(concept.price, 'DC')}</td>
-                    <td class="text-right font-bold">${reports.format(importe, 'DI')}</td>
-                </tr>
-            `;
         };
 
-        if(engine.rootCode) {
-            reports.traverseTree(engine.rootCode, null, 0, processNode);
-            
-            const rootConcept = engine.db.get(engine.rootCode);
-            content += `
-                </tbody>
-                <tfoot>
-                    <tr style="background-color: #1e3a8a; color: white;">
-                        <td colspan="5" class="text-right" style="padding: 10px; font-size:12px;">TOTAL PRESUPUESTO DE EJECUCIÓN MATERIAL:</td>
-                        <td class="text-right" style="padding: 10px; font-size:12px; font-weight:bold;">${reports.formatCurrency(rootConcept.price, 'DI')}</td>
-                    </tr>
-                </tfoot>
-            </table>
-            `;
+        if (engine.rootCode) {
+            renderNode(engine.rootCode, null, 1);
         }
 
+        content += `</tbody></table>`;
         reports.printHTML(content, "Listado de Presupuesto");
     },
 
     // REPORTE 3: RESUMEN CAPÍTULOS
     generateChapterSummaryReport: () => {
         let content = `<h1>Resumen por Capítulos</h1>`;
-        content += `<div class="meta">PROYECTO: ${engine.rootCode} | DIVISA: ${engine.metadata.currency}</div>`;
+        content += `<div class="meta">PROYECTO: ${reports.cleanCode(engine.rootCode)} | DIVISA: ${engine.metadata.currency}</div>`;
         
         content += `
             <table>
@@ -529,7 +577,7 @@ const reports = {
             
             content += `
                 <tr class="chapter-row">
-                    <td class="font-mono font-bold ${indentClass}">${concept.code}</td>
+                    <td class="font-mono font-bold ${indentClass}">${reports.cleanCode(concept.code)}</td>
                     <td class="font-bold">${concept.summary}</td>
                     <td class="text-right font-bold">${reports.format(importe, 'DI')}</td>
                 </tr>
@@ -558,7 +606,7 @@ const reports = {
     // REPORTE 4: CUADRO DE PRECIOS Nº 1
     generatePriceTable1Report: () => {
         let content = `<h1>Cuadro de Precios Nº 1</h1>`;
-        content += `<div class="meta">PROYECTO: ${engine.rootCode} | DIVISA: ${engine.metadata.currency}</div>`;
+        content += `<div class="meta">PROYECTO: ${reports.cleanCode(engine.rootCode)} | DIVISA: ${engine.metadata.currency}</div>`;
         
         content += `
             <table>
@@ -592,7 +640,7 @@ const reports = {
             content += `
                 <tr class="no-break">
                     <td class="text-center font-bold text-xs" style="vertical-align:top; padding-top:8px;">${nString}</td>
-                    <td class="font-mono font-bold" style="vertical-align:top; padding-top:8px;">${concept.code}</td>
+                    <td class="font-mono font-bold" style="vertical-align:top; padding-top:8px;">${reports.cleanCode(concept.code)}</td>
                     <td>
                         ${itemText}
                         <span class="price-letter">Asciende el precio unitario a la expresada cantidad de ${priceText}</span>
@@ -620,7 +668,7 @@ const reports = {
     // REPORTE 5: CUADRO DE PRECIOS Nº 2 [CON NUEVO ALGORITMO]
     generatePriceTable2Report: () => {
         let content = `<h1>Cuadro de Precios Nº 2</h1>`;
-        content += `<div class="meta">PROYECTO: ${engine.rootCode} | DIVISA: ${engine.metadata.currency}</div>`;
+        content += `<div class="meta">PROYECTO: ${reports.cleanCode(engine.rootCode)} | DIVISA: ${engine.metadata.currency}</div>`;
         
         content += `
             <style>
@@ -703,7 +751,7 @@ const reports = {
             content += `
                 <div class="cp2-row">
                     <div class="cp2-col-idx">${nString}</div>
-                    <div class="cp2-col-code">${concept.code}</div>
+                    <div class="cp2-col-code">${reports.cleanCode(concept.code)}</div>
                     <div class="cp2-col-unit">${concept.unit || ''}</div>
                     <div class="cp2-col-body">
                         <div class="cp2-desc">${itemText}</div>
@@ -755,7 +803,7 @@ const reports = {
 
     generateBasicResourceReport: (type, typeName) => {
         let content = `<h1>Listado de ${typeName}</h1>`;
-        content += `<div class="meta">PROYECTO: ${engine.rootCode} | DIVISA: ${engine.metadata.currency}</div>`;
+        content += `<div class="meta">PROYECTO: ${reports.cleanCode(engine.rootCode)} | DIVISA: ${engine.metadata.currency}</div>`;
         
         content += `
             <table>
@@ -780,7 +828,7 @@ const reports = {
         resources.forEach(res => {
              content += `
                 <tr>
-                    <td class="font-mono font-bold">${res.code}</td>
+                    <td class="font-mono font-bold">${reports.cleanCode(res.code)}</td>
                     <td>${res.summary}</td>
                     <td class="text-right font-bold">${reports.formatCurrency(res.price, 'DC')}</td>
                 </tr>
@@ -791,6 +839,7 @@ const reports = {
         reports.printHTML(content, `Listado de ${typeName}`);
     },
 
+    // generateLaborReport: () => reports.generateBasicResourceReport('1', 'Mano de Obra'),
     generateLaborReport: () => reports.generateBasicResourceReport('1', 'Mano de Obra'),
     generateMachineryReport: () => reports.generateBasicResourceReport('2', 'Maquinaria'),
     generateMaterialsReport: () => reports.generateBasicResourceReport('3', 'Materiales'),
@@ -798,7 +847,7 @@ const reports = {
     // --- LISTADO DE NECESIDADES ---
     generateNeedsReport: () => {
         let content = `<h1>Listado de Necesidades</h1>`;
-        content += `<div class="meta">PROYECTO: ${engine.rootCode} | DIVISA: ${engine.metadata.currency}</div>`;
+        content += `<div class="meta">PROYECTO: ${reports.cleanCode(engine.rootCode)} | DIVISA: ${engine.metadata.currency}</div>`;
 
         const needsMap = new Map();
 
@@ -901,7 +950,7 @@ const reports = {
 
             content += `
                 <tr>
-                    <td class="font-mono text-xs">${item.concept.code}</td>
+                    <td class="font-mono text-xs">${reports.cleanCode(item.concept.code)}</td>
                     <td class="text-xs">${item.concept.summary}</td>
                     <td class="text-center text-xs text-slate-400">${item.concept.type}</td>
                     <td class="text-right text-xs">${reports.formatCurrency(item.concept.price, 'DC')}</td>
@@ -935,7 +984,7 @@ const reports = {
     // --- LISTADO DE NECESIDADES DE AUXILIARES ---
     generateAuxiliaryNeedsReport: () => {
         let content = `<h1>Necesidades de Partidas Auxiliares</h1>`;
-        content += `<div class="meta">PROYECTO: ${engine.rootCode} | DIVISA: ${engine.metadata.currency}</div>`;
+        content += `<div class="meta">PROYECTO: ${reports.cleanCode(engine.rootCode)} | DIVISA: ${engine.metadata.currency}</div>`;
 
         const hierarchyMemberCodes = new Set();
         if(engine.rootCode) hierarchyMemberCodes.add(engine.rootCode);
@@ -1031,7 +1080,7 @@ const reports = {
 
                 content += `
                     <tr>
-                        <td class="font-mono text-xs font-bold">${item.concept.code}</td>
+                        <td class="font-mono text-xs font-bold">${reports.cleanCode(item.concept.code)}</td>
                         <td class="text-xs">${item.concept.summary}</td>
                         <td class="text-center text-xs text-slate-500">${item.concept.unit}</td>
                         <td class="text-right text-xs">${reports.formatCurrency(item.concept.price, 'DC')}</td>
@@ -1056,7 +1105,7 @@ const reports = {
     // --- LISTADO DE AUXILIARES ---
     generateAuxiliaryReport: () => {
         let content = `<h1>Partidas de Precios Auxiliares</h1>`;
-        content += `<div class="meta">PROYECTO: ${engine.rootCode} | DIVISA: ${engine.metadata.currency}</div>`;
+        content += `<div class="meta">PROYECTO: ${reports.cleanCode(engine.rootCode)} | DIVISA: ${engine.metadata.currency}</div>`;
 
         const hierarchyMemberCodes = new Set();
         
@@ -1096,7 +1145,7 @@ const reports = {
                     <div class="no-break" style="margin-top: 20px; border: 1px solid #e2e8f0; padding: 0; border-radius: 4px; overflow:hidden;">
                         <div style="background-color: #f1f5f9; padding: 10px; border-bottom: 1px solid #e2e8f0; display:flex; justify-content:space-between; align-items:center;">
                             <div>
-                                <span style="color:#1e40af; font-weight:bold; font-family:monospace; font-size:1.1em; margin-right:10px;">${parent.code}</span>
+                                <span style="color:#1e40af; font-weight:bold; font-family:monospace; font-size:1.1em; margin-right:10px;">${reports.cleanCode(parent.code)}</span>
                                 <span style="font-weight:bold;">${parent.summary}</span>
                             </div>
                             <span style="font-weight:black; font-size:1.1em;">${reports.formatCurrency(parent.price, 'DC')}</span>
@@ -1126,7 +1175,7 @@ const reports = {
                     
                     content += `
                         <tr>
-                            <td class="font-mono text-xs" style="border-bottom:1px dashed #f1f5f9;">${childConcept ? childConcept.code : child.code}</td>
+                            <td class="font-mono text-xs" style="border-bottom:1px dashed #f1f5f9;">${reports.cleanCode(childConcept ? childConcept.code : child.code)}</td>
                             <td class="text-xs" style="border-bottom:1px dashed #f1f5f9;">${childConcept ? childConcept.summary : '<span style="color:red">No encontrado</span>'}</td>
                             <td class="text-center text-xs" style="border-bottom:1px dashed #f1f5f9; color:#94a3b8;">${childConcept ? childConcept.unit : ''}</td>
                             <td class="text-right text-xs" style="border-bottom:1px dashed #f1f5f9;">${reports.format(quantity, 'DR')}</td>
@@ -1146,7 +1195,7 @@ const reports = {
     // --- LISTADO DE DESCOMPUESTOS ---
     generateDecompositionReport: () => {
         let content = `<h1>Cuadro de Precios Descompuestos</h1>`; 
-        content += `<div class="meta">PROYECTO: ${engine.rootCode} | DIVISA: ${engine.metadata.currency}</div>`;
+        content += `<div class="meta">PROYECTO: ${reports.cleanCode(engine.rootCode)} | DIVISA: ${engine.metadata.currency}</div>`;
         
         const hierarchyMemberCodes = new Set();
         for (const [code, concept] of engine.db) {
@@ -1200,7 +1249,7 @@ const reports = {
                 // Fila Padre
                 content += `
                     <tr style="page-break-inside: avoid;">
-                        <td class="font-bold" style="padding-top: 15px;">${parent.code}</td>
+                        <td class="font-bold" style="padding-top: 15px;">${reports.cleanCode(parent.code)}</td>
                         <td style="padding-top: 15px;"></td>
                         <td class="font-bold" style="padding-top: 15px; padding-left: 8px;">${parent.unit || ''}</td>
                         <td class="font-bold" style="padding-top: 15px;">${parent.summary}${descHtml}</td>
@@ -1230,7 +1279,7 @@ const reports = {
                     
                     content += `
                         <tr style="page-break-inside: avoid;">
-                            <td>${cCode}</td>
+                            <td>${reports.cleanCode(cCode)}</td>
                             <td class="text-right">${reports.format(quantity, 'DR')}</td>
                             <td style="padding-left: 8px;">${cUnit}</td>
                             <td>${cSum}</td>
@@ -1273,7 +1322,7 @@ const reports = {
     // --- MACRO: INFORME DE DESCOMPUESTOS SIN TEXTO LARGO ---
     generateMissingTextReport: () => {
         let content = `<h1>Partidas Descompuestas sin Texto Largo</h1>`; 
-        content += `<div class="meta">PROYECTO: ${engine.rootCode} | DIVISA: ${engine.metadata.currency}</div>`;
+        content += `<div class="meta">PROYECTO: ${reports.cleanCode(engine.rootCode)} | DIVISA: ${engine.metadata.currency}</div>`;
         
         const missingTextItems = Array.from(engine.db.values())
             .filter(c => {
@@ -1305,7 +1354,7 @@ const reports = {
             missingTextItems.forEach(item => {
                 content += `
                     <tr>
-                        <td class="font-mono text-xs font-bold" style="border-bottom:1px dashed #e2e8f0;">${item.code}</td>
+                        <td class="font-mono text-xs font-bold" style="border-bottom:1px dashed #e2e8f0;">${reports.cleanCode(item.code)}</td>
                         <td class="text-xs" style="border-bottom:1px dashed #e2e8f0;">${item.summary}</td>
                     </tr>
                 `;
@@ -1320,7 +1369,7 @@ const reports = {
     // --- NUEVO INFORME: SOLO PARTIDAS ---
     generatePartidasReport: () => {
         let content = `<h1>Listado de Partidas</h1>`;
-        content += `<div class="meta">PROYECTO: ${engine.rootCode} | DIVISA: ${engine.metadata.currency}</div>`;
+        content += `<div class="meta">PROYECTO: ${reports.cleanCode(engine.rootCode)} | DIVISA: ${engine.metadata.currency}</div>`;
 
         const items = Array.from(engine.db.values())
             .filter(c => {
@@ -1348,7 +1397,7 @@ const reports = {
             items.forEach(item => {
                 content += `
                     <tr>
-                        <td class="font-mono text-xs font-bold" style="border-bottom:1px dashed #e2e8f0;">${item.code}</td>
+                        <td class="font-mono text-xs font-bold" style="border-bottom:1px dashed #e2e8f0;">${reports.cleanCode(item.code)}</td>
                         <td class="text-center text-xs text-slate-500" style="border-bottom:1px dashed #e2e8f0;">${item.unit || ''}</td>
                         <td class="text-xs" style="border-bottom:1px dashed #e2e8f0;">${item.summary}</td>
                     </tr>
