@@ -573,6 +573,8 @@ Quiero que el reporte de precios descompuestos sea similar a la imagen que te ad
 (le pongo una captura de imagen de un listado de descompuestos generado por presto)
 
 
+Quiero que el reporte de presupuestos sea similar a la imagen que te adjunto. Añada el código del capitulo y subcapitulo quitandole el caracter #
+
 **pendiente**
 LISTADOS "CLASICOS":
 - MANO DE OBRA
@@ -584,7 +586,7 @@ LISTADOS "CLASICOS":
 - CUADROS DE PRECIOS Nº 1
 - CUADROS DE PRECIOS Nº 2
 - PRESUPUESTO PARCIALES -> OK
-- RESUMEN DE PRESUPUESTOS
+- RESUMEN DE PRESUPUESTOS -> OK
 
 
 

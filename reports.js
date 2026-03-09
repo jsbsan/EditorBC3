@@ -538,16 +538,34 @@ const reports = {
 
     // REPORTE 3: RESUMEN CAPÍTULOS
     generateChapterSummaryReport: () => {
+        // Preguntar al usuario hasta qué nivel desea generar el resumen
+        const levelInput = prompt("¿Hasta qué nivel de capítulos desea generar el resumen?\n(El Nivel 1 es el de los capítulos principales)", "1");
+        if (levelInput === null) return; // Operación cancelada por el usuario
+        
+        const maxLevel = parseInt(levelInput, 10) || 1; // Si no introduce un número válido, por defecto 1
+
         let content = `<h1>Resumen por Capítulos</h1>`;
         content += `<div class="meta">PROYECTO: ${reports.cleanCode(engine.rootCode)} | DIVISA: ${engine.metadata.currency}</div>`;
         
+        let currencyLabel = engine.metadata.currency;
+        if (currencyLabel.toLowerCase() === '€' || currencyLabel.toLowerCase() === 'euros') {
+            currencyLabel = 'EUROS';
+        } else {
+            currencyLabel = currencyLabel.toUpperCase();
+        }
+
         content += `
-            <table>
+            <style>
+                .summary-table { width: 100%; border-collapse: collapse; font-family: 'Arial', sans-serif; font-size: 11px; margin-bottom: 20px; }
+                .summary-table th { border-top: 1px solid #000; border-bottom: 1px solid #000; padding: 8px 4px; text-align: left; background: transparent; color: #000; font-size: 10px; font-weight: bold; text-transform: uppercase; }
+                .summary-table td { padding: 4px 4px; vertical-align: bottom; border-bottom: none; color: #000; }
+            </style>
+            <table class="summary-table">
                 <thead>
                     <tr>
-                        <th width="15%">Código</th>
-                        <th width="65%">Descripción</th>
-                        <th width="20%" class="text-right">Importe</th>
+                        <th width="15%">CAPITULO</th>
+                        <th width="65%">RESUMEN</th>
+                        <th width="20%" class="text-right">${currencyLabel}</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -556,30 +574,39 @@ const reports = {
         const processNode = (concept, parentCode, level, isChapter) => {
             if (!isChapter) return;
             
-            // Excluir raíz del listado
-            if (concept.code === engine.rootCode) return;
+            // Excluir raíz del listado y limitar según el nivel introducido por el usuario
+            if (concept.code === engine.rootCode || level > maxLevel) return;
 
-            const indentClass = `indent-${Math.min(level, 5)}`;
-            let cantidad = 0;
-            let importe = 0;
-
+            let cantidad = 1;
             if (parentCode) {
                 const parent = engine.resolveConcept(parentCode);
                 const childRef = parent.children.find(c => engine.normalizeCode(c.code) === engine.normalizeCode(concept.code));
                 if (childRef) {
                     cantidad = childRef.factor * childRef.yield;
                 }
-            } else {
-                cantidad = 1; 
             }
 
-            importe = engine.round(concept.price * cantidad);
-            
+            let importe = engine.round(concept.price * cantidad);
+
+            // Calcular sangría visual en función del nivel para mantener el formato de la imagen original
+            const isSub = level > 1;
+            const padCode = isSub ? (level - 1) * 15 : 0;
+            const prefixCode = isSub ? '-' : '';
+            const padSum = isSub ? (level - 1) * 20 : 0;
+            const prefixSum = isSub ? '-' : '';
+
             content += `
-                <tr class="chapter-row">
-                    <td class="font-mono font-bold ${indentClass}">${reports.cleanCode(concept.code)}</td>
-                    <td class="font-bold">${concept.summary}</td>
-                    <td class="text-right font-bold">${reports.format(importe, 'DI')}</td>
+                <tr style="page-break-inside: avoid;">
+                    <td style="padding-left: ${padCode}px;">
+                        ${prefixCode}${reports.cleanCode(concept.code)}
+                    </td>
+                    <td>
+                        <div style="display: flex; align-items: baseline; padding-left: ${padSum}px;">
+                            <span>${prefixSum}${concept.summary}</span>
+                            <span style="flex-grow: 1; border-bottom: 1px dotted #000; margin-left: 5px;"></span>
+                        </div>
+                    </td>
+                    <td class="text-right">${reports.format(importe, 'DI')}</td>
                 </tr>
             `;
         };
@@ -591,9 +618,13 @@ const reports = {
             content += `
                 </tbody>
                 <tfoot>
-                    <tr style="background-color: #1e3a8a; color: white;">
-                        <td colspan="2" class="text-right" style="padding: 10px; font-size:12px;">TOTAL PRESUPUESTO DE EJECUCIÓN MATERIAL:</td>
-                        <td class="text-right" style="padding: 10px; font-size:12px; font-weight:bold;">${reports.formatCurrency(rootConcept.price, 'DI')}</td>
+                    <tr style="page-break-inside: avoid;">
+                        <td colspan="2" class="text-right" style="padding-top: 15px; padding-bottom: 15px; padding-right: 15px; font-weight: bold; font-size: 12px;">
+                            TOTAL EJECUCIÓN MATERIAL
+                        </td>
+                        <td class="text-right font-bold" style="font-size: 12px; padding-top: 15px; padding-bottom: 15px; border-top: 1px solid #000;">
+                            ${reports.format(rootConcept.price, 'DI')}
+                        </td>
                     </tr>
                 </tfoot>
             </table>
