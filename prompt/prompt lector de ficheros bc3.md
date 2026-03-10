@@ -589,16 +589,20 @@ LISTADOS "CLASICOS":
 - RESUMEN DE PRESUPUESTOS -> OK
 
 
+---------
+## prompt: Mejora para cuando se cierre accidentamente te avise.
+---------
+Mejora: como la aplicación se usa en un navegador (chrome, firefox, etc), quiero que cuando se cierre la ventana o se cierre el navegador, informe al usuario, para que pueda cancelarlo.
+ 
+---------
+## prompt: Suelta de archivos para abrir soltando bc3 en al aplicación
+---------
+Mejora: Quiero que cuando suelte un fichero .bc3 en la aplicación, si no tiene ya otro bc3 abierto, que lo cargue.
 
 
 **pendiente**
 - añadir al listado de necesidades % del proyecto que representan y ordenarlas según estas.  
 - Poner solo textos largos en listados   
-
-
-
-
-
 
 ---------
 ## NOTA:

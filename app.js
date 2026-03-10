@@ -1,6 +1,6 @@
 /**
  * PROYECTO: Visor Profesional FIEBDC-3 (BC3)
- * VERSION: 3.87 (Macro Renombrar Códigos)
+ * VERSION: 3.88 (Aviso de cierre de ventana)
  * DESCRIPCION: 
  * - [MEJORA] Gestión inteligente de nombres de archivo al Guardar.
  * - [LOGICA] Al abrir, se conserva el nombre original.
@@ -10,6 +10,7 @@
  * - [CORRECCION] Macro applyIndirectCosts ahora excluye partidas auxiliares.
  * - [NUEVO] Macro replaceTextInDescriptions para buscar y reemplazar en pliegos.
  * - [NUEVO] Macro renameCodesBatch para renombrado masivo mediante fichero CSV.
+ * - [NUEVO] Prevención de cierre accidental de pestaña/navegador si hay datos cargados.
  */
 
 class BC3Engine {
@@ -2475,4 +2476,71 @@ document.addEventListener('DOMContentLoaded', () => {
         // Prevenir que el click en el input propague arrastre si fuera el caso
         sInput.addEventListener('mousedown', (e) => e.stopPropagation());
     }
+
+    // [NUEVO] Prevención de cierre accidental
+    window.addEventListener('beforeunload', function (e) {
+        // Solo lanzamos el aviso si hay un proyecto cargado
+        if (engine && engine.db && engine.db.size > 0) {
+            e.preventDefault();
+            e.returnValue = ''; // Necesario para navegadores modernos como Chrome
+        }
+    });
+
+    // [NUEVO] Drag & Drop para cargar fichero BC3
+    const dropZone = document.body;
+
+    ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+        dropZone.addEventListener(eventName, (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+        }, false);
+    });
+
+    dropZone.addEventListener('drop', (e) => {
+        const file = e.dataTransfer.files[0];
+        if (!file) return;
+
+        // Verificar extensión
+        const fileName = file.name.toLowerCase();
+        if (!fileName.endsWith('.bc3') && !fileName.endsWith('.txt')) {
+            ui.showToast("Por favor, suelte un archivo FIEBDC-3 (.bc3) válido.");
+            return;
+        }
+
+        // Condición: Si ya hay un proyecto abierto, se cancela la carga automática
+        if (engine.db.size > 0) {
+            ui.showToast("Ya hay un proyecto abierto. Utilice el botón 'Abrir' para reemplazarlo.");
+            return;
+        }
+
+        // Cargar el archivo si no hay nada abierto
+        engine.fileName = file.name.replace(/\.[^/.]+$/, ""); // Quitar extensión
+        
+        const loader = document.getElementById('loader');
+        if(loader) loader.style.display = 'flex';
+        
+        const reader = new FileReader();
+        reader.onload = async (res) => {
+            try {
+                await engine.parse(res.target.result);
+                engine.recalculateProject();
+                renderAll();
+                if (!document.getElementById('floating-list-window').classList.contains('hidden')) {
+                    renderList();
+                }
+                ui.showToast("Archivo cargado correctamente.");
+            } catch (error) {
+                console.error("Error al procesar el archivo BC3:", error);
+                alert("Ocurrió un error al procesar el archivo. " + error);
+            } finally {
+                if(loader) loader.style.display = 'none';
+            }
+        };
+        reader.onerror = (err) => {
+            console.error("Error de lectura:", err);
+            alert("Error al leer el archivo.");
+            if(loader) loader.style.display = 'none';
+        };
+        reader.readAsText(file, 'windows-1252'); 
+    }, false);
 });
