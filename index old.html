@@ -1,141 +1,55 @@
 <!-- 
     PROYECTO: Visor Profesional FIEBDC-3 (BC3)
-    VERSION: 3.93 (Sistema de Temas Escalable)
+    VERSION: 3.88 (Informe Solo Partidas)
     DESCRIPCION: 
     - [NUEVO] Botón "Macros" en la barra superior.
     - [NUEVO] Modal de Macros con las funciones "Añadir %CI", "Buscar y Reemplazar", "Informe sin pliegos" y "Renombrar códigos".
     - [NUEVO] Añadido informe "Solo Partidas" al listado de informes para extraer rápidamente el nombre corto, ud y código.
     - [LOGICA] Integración con las nuevas funciones de app.js y reports.js para gestión de costes indirectos y edición en masa.
-    - [NUEVO] Sistema de Temas UI/UX (Claro, Oscuro, Azul, Verde) con variables CSS e inyección dinámica.
 -->
 <!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Visor Profesional FIEBDC-3 (BC3) v3.93</title>
+    <title>Visor Profesional FIEBDC-3 (BC3) v3.88</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Estilos Personalizados y SISTEMA DE TEMAS -->
+    <!-- Estilos Personalizados -->
     <style>
-        /* =========================================================
-           1. SISTEMA DE COLORES (DESIGN TOKENS)
-           ========================================================= */
-        :root, [data-theme="light"] {
-            --bg-primary: #F8FAFC;       /* slate-50/100 */
-            --bg-surface: #FFFFFF;       /* white */
-            --bg-header: #0F172A;        /* slate-900 */
-            --color-primary: #2563EB;    /* blue-600 */
-            --color-secondary: #64748B;  /* slate-500 */
-            --text-primary: #1E293B;     /* slate-800 */
-            --text-secondary: #475569;   /* slate-600 */
-            --border-color: #E2E8F0;     /* slate-200 */
-            --border-color-light: #F1F5F9;
-        }
+        /* PROYECTO: Visor Profesional FIEBDC-3 (BC3)
+            VERSION: 3.26
+            DESCRIPCION: Hoja de estilos principal con Tailwind CSS y ajustes personalizados.
+        */
 
-        [data-theme="dark"] {
-            --bg-primary: #0F172A;
-            --bg-surface: #1E293B;
-            --bg-header: #020617;
-            --color-primary: #3B82F6;
-            --color-secondary: #94A3B8;
-            --text-primary: #F8FAFC;
-            --text-secondary: #CBD5E1;
-            --border-color: #334155;
-            --border-color-light: #1E293B;
-        }
-
-        [data-theme="blue"] {
-            --bg-primary: #F0F9FF;
-            --bg-surface: #FFFFFF;
-            --bg-header: #0369A1;
-            --color-primary: #0284C7;
-            --color-secondary: #38BDF8;
-            --text-primary: #082F49;
-            --text-secondary: #0C4A6E;
-            --border-color: #BAE6FD;
-            --border-color-light: #E0F2FE;
-        }
-
-        [data-theme="green"] {
-            --bg-primary: #F0FDF4;
-            --bg-surface: #FFFFFF;
-            --bg-header: #14532D;
-            --color-primary: #16A34A;
-            --color-secondary: #4ADE80;
-            --text-primary: #14532D;
-            --text-secondary: #166534;
-            --border-color: #BBF7D0;
-            --border-color-light: #DCFCE7;
-        }
-
-        /* =========================================================
-           2. SOBRESCRITURA GLOBAL DINÁMICA SOBRE TAILWIND
-           ========================================================= */
-        /* Fuerza una transición suave al cambiar de tema */
-        body, div, span, table, th, td, tr, button, header, aside, section, footer, input, select, textarea {
-            transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
-        }
-
-        /* Mapeo de variables a las clases de Tailwind utilizadas en el HTML y JS */
-        body { background-color: var(--bg-primary) !important; color: var(--text-primary) !important; }
-        
-        .bg-white, .modal-overlay .bg-white { background-color: var(--bg-surface) !important; }
-        .bg-slate-50, .bg-slate-100 { background-color: var(--bg-primary) !important; }
-        .bg-slate-900 { background-color: var(--bg-header) !important; }
-        
-        .text-slate-900, .text-slate-800, .text-slate-700 { color: var(--text-primary) !important; }
-        .text-slate-600, .text-slate-500, .text-slate-400 { color: var(--text-secondary) !important; }
-        
-        .border-slate-100 { border-color: var(--border-color-light) !important; }
-        .border-slate-200, .border-slate-300 { border-color: var(--border-color) !important; }
-        
-        /* Ajuste de selección y componentes dinámicos */
-        #tree-container .tree-node-selected, #list-container .list-item-selected {
-            background-color: color-mix(in srgb, var(--color-primary) 15%, transparent) !important;
-            border-left-color: var(--color-primary) !important;
-            color: var(--text-primary) !important;
-        }
-
-        /* Inputs y Textareas se adaptan al modo oscuro */
-        input, select, textarea {
-            background-color: var(--bg-surface) !important;
-            color: var(--text-primary) !important;
-            border-color: var(--border-color) !important;
-        }
-
-        /* Ajustes específicos del Menú de Temas */
-        .theme-menu {
-            background-color: var(--bg-surface) !important;
-            border-color: var(--border-color) !important;
-        }
-        .theme-menu button { color: var(--text-primary) !important; }
-        .theme-menu button:hover { background-color: var(--bg-primary) !important; }
-        .theme-menu div.bg-slate-50 {
-            background-color: var(--bg-primary) !important;
-            border-bottom-color: var(--border-color) !important;
-            color: var(--text-secondary) !important;
-        }
-
-        /* =========================================================
-           3. ESTILOS PROPIOS ORIGINALES
-           ========================================================= */
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
 
         body {
             font-family: 'Inter', sans-serif;
+            background-color: #f1f5f9;
         }
 
         /* Estilos de barra de desplazamiento */
         ::-webkit-scrollbar { width: 6px; height: 6px; }
-        ::-webkit-scrollbar-track { background: var(--bg-primary); }
-        ::-webkit-scrollbar-thumb { background: var(--color-secondary); border-radius: 10px; }
-        ::-webkit-scrollbar-thumb:hover { filter: brightness(0.8); }
+        ::-webkit-scrollbar-track { background: #f1f1f1; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+
+        /* [MEJORA] Aumentamos especificidad para eliminar !important */
+        #tree-container .tree-node-selected {
+            background-color: #dbeafe;
+            border-left: 4px solid #2563eb;
+        }
+
+        #list-container .list-item-selected {
+            background-color: #dbeafe;
+            border-left: 4px solid #2563eb;
+        }
 
         .table-sticky thead th {
             position: sticky;
             top: 0;
-            background: var(--bg-primary) !important;
+            background: #f8fafc;
             z-index: 10;
         }
 
@@ -148,9 +62,8 @@
             align-items: center;
             justify-content: center;
         }
-        [data-theme="dark"] .loading-overlay { background: rgba(15, 23, 42, 0.9); }
 
-        /* Modal Overlay */
+        /* Modal Overlay (Solo para Reportes ahora) */
         .modal-overlay {
             display: none;
             position: fixed;
@@ -164,29 +77,31 @@
         .modal-overlay.active { display: flex; }
 
         .chapter-line {
-            border-left: 1px dashed var(--border-color);
+            border-left: 1px dashed #cbd5e1;
             margin-left: 0.75rem;
         }
 
         /* Estilos para la tabla de mediciones detallada */
-        .meas-table th { font-size: 10px; text-transform: uppercase; color: var(--text-secondary); padding: 6px 4px; }
-        .meas-table td { padding: 4px 4px; border-bottom: 1px solid var(--bg-primary); }
+        .meas-table th { font-size: 10px; text-transform: uppercase; color: #64748b; padding: 6px 4px; }
+        .meas-table td { padding: 4px 4px; border-bottom: 1px solid #f1f5f9; }
         .meas-table input { width: 100%; background: transparent; border: none; font-family: monospace; text-align: right; }
 
-        /* Estilos para Ventana Flotante */
+        /* --- NUEVO: Estilos para Ventana Flotante --- */
         .floating-window {
             position: absolute;
+            /* top y left se manejan inline o JS */
             z-index: 900; 
             resize: both; 
-            overflow: hidden; 
+            overflow: hidden; /* Ajuste para bordes redondeados */
             min-width: 250px;
             min-height: 200px;
-            box-shadow: 0 15px 35px -5px rgba(0, 0, 0, 0.2), 0 10px 10px -5px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 15px 35px -5px rgba(0, 0, 0, 0.2), 0 10px 10px -5px rgba(0, 0, 0, 0.1); /* Sombra más pronunciada */
         }
 
+        /* Specific styling for the Edit Window (Modeless) */
         #edit-window {
-            z-index: 1100;
-            resize: vertical;
+            z-index: 1100; /* Higher than search list */
+            resize: vertical; /* Only vertical resize makes sense for forms */
         }
 
         .drag-handle {
@@ -199,7 +114,7 @@
     <!-- Loader -->
     <div id="loader" class="loading-overlay">
         <div class="flex flex-col items-center">
-            <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600" style="border-color: var(--color-primary)"></div>
+            <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
             <p id="loader-text" class="mt-4 text-slate-600 font-semibold tracking-wide">Procesando...</p>
         </div>
     </div>
@@ -239,12 +154,12 @@
             </div>
 
             <div class="mt-8 text-[10px] text-slate-300">
-                Versión 3.93 Build 2026
+                Versión 3.88 Build 2026
             </div>
         </div>
     </div>
 
-    <!-- Modal de Macros -->
+    <!-- [NUEVO] Modal de Macros -->
     <div id="modal-macros" class="modal-overlay" onclick="if(event.target === this) ui.closeMacrosModal()">
         <div class="bg-white rounded-xl shadow-2xl w-full max-w-lg overflow-hidden transform transition-all scale-100 max-h-[90vh] flex flex-col">
             <div class="px-6 py-4 bg-slate-50 border-b border-slate-100 flex justify-between items-center shrink-0">
@@ -316,7 +231,7 @@
                     </div>
                 </button>
 
-                <!-- Macro 4: Renombrar códigos de partidas -->
+                <!-- [NUEVO] Macro 4: Renombrar códigos de partidas -->
                 <button onclick="ui.runMacroRenameCodes()" class="w-full flex items-center gap-4 p-4 border border-slate-200 rounded-xl hover:bg-emerald-50 hover:border-emerald-300 hover:shadow-md transition-all group text-left mt-3">
                     <div class="bg-emerald-100 p-3 rounded-lg group-hover:bg-emerald-200 transition-colors">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -338,7 +253,7 @@
         </div>
     </div>
 
-    <!-- Modal de Ayuda (Mantenido) -->
+    <!-- [NUEVO] Modal de Ayuda (Mantenido) -->
     <div id="modal-help" class="modal-overlay" onclick="if(event.target === this) ui.closeHelpModal()">
         <div class="bg-white rounded-xl shadow-2xl w-full max-w-4xl overflow-hidden transform transition-all scale-100 max-h-[90vh] flex flex-col">
             <div class="px-6 py-4 bg-slate-50 border-b border-slate-100 flex justify-between items-center sticky top-0 z-10">
@@ -442,7 +357,7 @@
             </div>
             
             <div class="px-6 py-4 bg-slate-50 text-right sticky bottom-0 border-t border-slate-100">
-                <button onclick="ui.closeHelpModal()" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg shadow font-bold transition-colors" style="background-color: var(--color-primary)">
+                <button onclick="ui.closeHelpModal()" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg shadow font-bold transition-colors">
                     Entendido
                 </button>
             </div>
@@ -777,43 +692,43 @@
         <div class="px-6 py-4 bg-slate-50 border-t border-slate-100 flex justify-end gap-3 sticky bottom-0">
             <button id="btn-delete-modal" onclick="ui.deleteEntry()" class="hidden px-4 py-2 text-sm font-medium text-white bg-red-500 hover:bg-red-600 rounded-md shadow-sm transition-colors mr-auto">Eliminar</button>
             <button onclick="ui.closeModal()" class="px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-200 rounded-md transition-colors">Cancelar</button>
-            <button onclick="ui.saveEdit()" class="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-md shadow-sm transition-colors" style="background-color: var(--color-primary)">Guardar Cambios</button>
+            <button onclick="ui.saveEdit()" class="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-md shadow-sm transition-colors">Guardar Cambios</button>
         </div>
     </div>
 
     <!-- Cabecera -->
     <header class="bg-slate-900 text-white p-4 shadow-xl flex items-center justify-between h-16 relative z-50">
         <div class="flex items-center gap-3">
-            <div class="bg-blue-600 p-1 rounded-lg shadow-inner overflow-hidden flex items-center justify-center w-10 h-10" style="background-color: rgba(255,255,255,0.1)">
+            <div class="bg-blue-600 p-1 rounded-lg shadow-inner overflow-hidden flex items-center justify-center w-10 h-10">
                 <img src="lince.png" alt="Logo Lince" class="w-full h-full object-cover">
             </div>
             <div>
                 <h1 class="text-lg font-extrabold tracking-tight text-white">BC3 Pro Analyzer</h1>
-                <p class="text-[10px] text-blue-300 font-bold uppercase tracking-widest opacity-80">Ingeniería FIEBDC-3</p>
+                <p class="text-[10px] text-blue-400 font-bold uppercase tracking-widest">Ingeniería FIEBDC-3</p>
             </div>
         </div>
         
         <div class="flex items-center gap-3">
             
             <!-- Botón Ventana Flotante Listado -->
-            <button onclick="ui.toggleListWindow()" class="flex items-center gap-2 bg-slate-700 hover:bg-slate-600 text-white px-4 py-2 rounded-md transition-colors shadow-lg border border-slate-600 font-medium text-sm mr-2 group" style="background-color: rgba(255,255,255,0.1); border-color: rgba(255,255,255,0.2)">
+            <button onclick="ui.toggleListWindow()" class="flex items-center gap-2 bg-slate-700 hover:bg-slate-600 text-white px-4 py-2 rounded-md transition-colors shadow-lg border border-slate-600 font-medium text-sm mr-2 group">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 group-hover:scale-110 transition-transform text-yellow-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                 </svg>
                 Buscar / Listado
             </button>
 
-            <div class="h-6 w-px bg-slate-700 mx-2" style="background-color: rgba(255,255,255,0.2)"></div>
+            <div class="h-6 w-px bg-slate-700 mx-2"></div>
 
             <!-- Botón Nuevo Proyecto -->
-            <button onclick="ui.createNewProject()" class="flex items-center gap-2 bg-blue-700 hover:bg-blue-600 text-white px-3 py-2 rounded-md transition-colors shadow font-medium text-xs border border-blue-500" title="Crear proyecto vacío" style="background-color: rgba(0,0,0,0.2); border-color: rgba(255,255,255,0.1)">
+            <button onclick="ui.createNewProject()" class="flex items-center gap-2 bg-blue-700 hover:bg-blue-600 text-white px-3 py-2 rounded-md transition-colors shadow font-medium text-xs border border-blue-500" title="Crear proyecto vacío">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
                 </svg>
                 Nuevo
             </button>
 
-            <label class="flex items-center gap-2 bg-blue-800 hover:bg-blue-700 px-3 py-2 rounded-md cursor-pointer transition-all shadow border border-blue-500 text-xs font-medium text-white" title="Abrir y reemplazar proyecto actual" style="background-color: rgba(0,0,0,0.2); border-color: rgba(255,255,255,0.1)">
+            <label class="flex items-center gap-2 bg-blue-800 hover:bg-blue-700 px-3 py-2 rounded-md cursor-pointer transition-all shadow border border-blue-500 text-xs font-medium text-white" title="Abrir y reemplazar proyecto actual">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 19a2 2 0 01-2-2V7a2 2 0 012-2h4l2 2h4a2 2 0 012 2v1M5 19h14a2 2 0 002-2v-5a2 2 0 00-2-2H9a2 2 0 00-2 2v5a2 2 0 01-2 2z" />
                 </svg>
@@ -822,7 +737,7 @@
             </label>
 
             <!-- Botón Importar (Fusionar) -->
-            <label class="flex items-center gap-2 bg-slate-600 hover:bg-slate-500 px-3 py-2 rounded-md cursor-pointer transition-all shadow border border-slate-500 text-xs font-medium text-white" title="Importar conceptos sin sobrescribir existentes" style="background-color: rgba(0,0,0,0.2); border-color: rgba(255,255,255,0.1)">
+            <label class="flex items-center gap-2 bg-slate-600 hover:bg-slate-500 px-3 py-2 rounded-md cursor-pointer transition-all shadow border border-slate-500 text-xs font-medium text-white" title="Importar conceptos sin sobrescribir existentes">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a2 2 0 002 2h12a2 2 0 002-2v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
                 </svg>
@@ -830,7 +745,7 @@
                 <input type="file" id="importInput" class="hidden" accept=".bc3,.txt">
             </label>
 
-            <div class="h-6 w-px bg-slate-700 mx-2" style="background-color: rgba(255,255,255,0.2)"></div>
+            <div class="h-6 w-px bg-slate-700 mx-2"></div>
 
             <button onclick="ui.saveFile()" class="text-blue-200 hover:text-white px-2 transition-colors" title="Guardar BC3">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -838,7 +753,7 @@
                 </svg>
             </button>
 
-            <!-- Botón Macros -->
+            <!-- [NUEVO] Botón Macros -->
             <button onclick="ui.openMacrosModal()" class="text-yellow-400 hover:text-white px-2 transition-colors" title="Macros y Automatización">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
@@ -856,34 +771,6 @@
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                 </svg>
             </button>
-
-            <!-- NUEVO: Selector de Tema Visual UI -->
-            <div class="relative group ml-2 border-l border-slate-700 pl-4" style="border-color: rgba(255,255,255,0.2)">
-                <button class="text-slate-300 hover:text-white px-2 transition-colors flex items-center gap-1" title="Cambiar Tema Visual">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01" />
-                    </svg>
-                </button>
-                
-                <!-- [CORRECCIÓN]: Se envuelve el menú en un contenedor con 'pt-2 top-full' para crear un puente invisible -->
-                <div class="absolute right-0 top-full pt-2 w-36 hidden group-hover:block z-[9999]">
-                    <div class="rounded-xl shadow-2xl overflow-hidden theme-menu">
-                        <div class="px-3 py-2 bg-slate-50 text-[10px] font-bold text-slate-400 uppercase tracking-wider text-center border-b">Temas UI/UX</div>
-                        <button onclick="setTheme('light')" class="w-full text-left px-4 py-2.5 text-sm transition-colors flex items-center gap-2">
-                            <span class="w-3 h-3 rounded-full bg-slate-100 border border-slate-300"></span> Claro
-                        </button>
-                        <button onclick="setTheme('dark')" class="w-full text-left px-4 py-2.5 text-sm transition-colors flex items-center gap-2">
-                            <span class="w-3 h-3 rounded-full bg-slate-800 border border-slate-600"></span> Oscuro
-                        </button>
-                        <button onclick="setTheme('blue')" class="w-full text-left px-4 py-2.5 text-sm transition-colors flex items-center gap-2">
-                            <span class="w-3 h-3 rounded-full bg-sky-200 border border-sky-400"></span> Azul
-                        </button>
-                        <button onclick="setTheme('green')" class="w-full text-left px-4 py-2.5 text-sm transition-colors flex items-center gap-2">
-                            <span class="w-3 h-3 rounded-full bg-green-200 border border-green-400"></span> Verde
-                        </button>
-                    </div>
-                </div>
-            </div>
 
         </div>
     </header>
@@ -923,7 +810,7 @@
                 </div>
             </div>
 
-            <div id="selection-header" class="bg-white p-5 rounded-b-2xl shadow-sm border border-slate-200 border-l-[6px] border-l-blue-600 transition-all hidden" style="border-left-color: var(--color-primary)">
+            <div id="selection-header" class="bg-white p-5 rounded-b-2xl shadow-sm border border-slate-200 border-l-[6px] border-l-blue-600 transition-all hidden">
                 <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                     <div class="flex-1 overflow-hidden">
                         <span id="detail-code" class="text-2xl font-black font-mono text-white bg-blue-600 px-4 py-2 rounded-lg uppercase tracking-widest inline-block mb-1 shadow-sm">CÓDIGO</span>
@@ -948,7 +835,7 @@
                     <div class="p-4 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
                         <h3 class="text-sm font-black text-slate-700 uppercase tracking-tight">Descomposición de Costes</h3>
                         <div class="flex items-center gap-1">
-                            <!-- Botón Copiar Tabla -->
+                            <!-- [NUEVO] Botón Copiar Tabla -->
                             <button onclick="ui.copyDecomposition()" id="btn-copy-decomp" class="text-slate-400 hover:text-blue-600 p-1 rounded hover:bg-slate-100 transition-colors" title="Copiar al portapapeles">
                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" />
@@ -985,13 +872,13 @@
                          <div class="p-4 bg-slate-50 border-b border-slate-200 flex justify-between items-center">
                             <h3 class="text-xs font-black text-slate-500 uppercase tracking-widest">Mediciones (~M)</h3>
                             <div class="flex items-center gap-1">
-                                <!-- Botón Copiar Mediciones -->
+                                <!-- [NUEVO] Botón Copiar Mediciones -->
                                 <button onclick="ui.copyMeasurements()" id="btn-copy-meas" class="text-slate-400 hover:text-blue-600 p-1 rounded hover:bg-slate-100 transition-colors" title="Copiar mediciones">
                                     <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" />
                                     </svg>
                                 </button>
-                                <!-- Botón Pegar Mediciones -->
+                                <!-- [NUEVO] Botón Pegar Mediciones -->
                                 <button onclick="ui.pasteMeasurements()" class="text-slate-400 hover:text-indigo-600 p-1 rounded hover:bg-slate-100 transition-colors" title="Pegar desde portapapeles (Tabulado: Desc, N, L, A, H)">
                                     <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
@@ -1028,7 +915,7 @@
                          <div class="p-4 bg-slate-50 border-b border-slate-200 flex justify-between items-center">
                             <h3 class="text-xs font-black text-slate-500 uppercase tracking-widest">Pliego / Texto (~T)</h3>
                             <div class="flex items-center gap-1">
-                                <!-- Botón Copiar Texto -->
+                                <!-- [NUEVO] Botón Copiar Texto -->
                                 <button id="btn-copy-text" onclick="ui.copyText()" class="hidden text-slate-400 hover:text-blue-600 p-1 rounded hover:bg-slate-100 transition-colors" title="Copiar texto">
                                     <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" />
@@ -1060,9 +947,9 @@
             <span id="status-currency">Divisa: -</span>
         </div>
         <div class="flex items-center gap-4">
-            <div class="flex items-center gap-2 text-blue-600" style="color: var(--color-primary)">
-                <span class="w-2 h-2 rounded-full bg-blue-500 animate-pulse" style="background-color: var(--color-primary)"></span>
-                Motor BC3 V3.93 - Profesional
+            <div class="flex items-center gap-2 text-blue-600">
+                <span class="w-2 h-2 rounded-full bg-blue-500 animate-pulse"></span>
+                Motor BC3 V3.88 - Profesional
             </div>
             <!-- Botón Ayuda -->
             <button onclick="ui.openHelpModal()" class="flex items-center gap-1 bg-white hover:bg-blue-50 text-blue-600 hover:text-blue-700 px-3 py-1 rounded-full border border-blue-200 transition-colors shadow-sm font-bold">
@@ -1080,7 +967,7 @@
     <!-- Ventana Flotante LISTADO COMPLETO (No Modal) -->
     <div id="floating-list-window" class="floating-window hidden flex flex-col bg-white rounded-lg shadow-2xl border border-slate-300 w-80 h-96 overflow-hidden" style="top: 80px; right: 20px;">
         <!-- Cabecera de Arrastre -->
-        <div id="floating-list-header" class="drag-handle bg-slate-800 text-white px-3 py-2 flex items-center justify-between cursor-move select-none border-b border-slate-700">
+        <div id="floating-list-header" class="drag-handle bg-slate-800 text-white px-3 py-2 flex items-center justify-between cursor-move select-none">
             <div class="flex items-center gap-2">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-yellow-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
@@ -1109,18 +996,5 @@
     <!-- Lógica JS -->
     <script src="app.js"></script>
     <script src="reports.js"></script>
-    
-    <!-- Lógica de Temas Visuales -->
-    <script>
-        function setTheme(themeName) {
-            document.documentElement.setAttribute('data-theme', themeName);
-            localStorage.setItem('bc3-theme', themeName);
-        }
-        // Cargar el tema guardado al iniciar
-        document.addEventListener('DOMContentLoaded', () => {
-            const savedTheme = localStorage.getItem('bc3-theme') || 'light';
-            setTheme(savedTheme);
-        });
-    </script>
 </body>
 </html>

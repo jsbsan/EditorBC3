@@ -583,8 +583,8 @@ LISTADOS "CLASICOS":
 - NECESIDADES (mano de obra, materiales, maquinaria, otros) -> OK
 - DESCOMPUESTOS -> OK
 - MEDICIONES -> OK
-- CUADROS DE PRECIOS Nº 1
-- CUADROS DE PRECIOS Nº 2
+- CUADROS DE PRECIOS Nº 1 -> OK
+- CUADROS DE PRECIOS Nº 2 -> OK
 - PRESUPUESTO PARCIALES -> OK
 - RESUMEN DE PRESUPUESTOS -> OK
 
@@ -599,6 +599,30 @@ Mejora: como la aplicación se usa en un navegador (chrome, firefox, etc), quier
 ---------
 Mejora: Quiero que cuando suelte un fichero .bc3 en la aplicación, si no tiene ya otro bc3 abierto, que lo cargue.
 
+
+
+--------- 
+PROMPT: temas oscuro/claro/azul/verde
+--------- 
+-> Actúa como un diseñador de UI/UX experto. Necesito crear un sistema de colores escalable para mi aplicación web. Quiero implementar varios estilos visuales y necesito que me generes las paletas de colores para los siguientes temas: Claro, Oscuro, Azul y Verde.
+Para CADA uno de los temas, proporciona una paleta coherente y armoniosa que incluya los siguientes tokens o roles de diseño:
+
+Background: Fondo principal de la aplicación.
+Surface: Fondo para tarjetas, barras de navegación o modales.
+Primary: Color principal para la marca, botones principales y acciones clave.
+Secondary: Color para botones secundarios o elementos de soporte.
+Text Primary: Color para el texto principal (debe tener altísimo contraste con Background y Surface).
+Text Secondary: Color para subtítulos o texto de menor jerarquía.
+Accent: Un color que resalte para notificaciones o detalles interactivos.
+Feedback: 3 colores universales adaptados al tema (Éxito, Advertencia y Error).
+Requisitos técnicos y de diseño:
+
+Armonía visual: Utiliza la teoría del color para asegurarte de que los tonos elegidos para cada tema se vean profesionales y modernos juntos.
+Accesibilidad (WCAG): Es obligatorio que el contraste entre los colores de texto y los de fondo/superficie cumplan con el estándar AA o AAA.
+Formato de salida: Entrégame el resultado directamente escrito en variables de CSS (ej. --bg-primary: #HEX;), agrupadas por su respectivo atributo de tema, por ejemplo: [data-theme="dark"] { ... }. Añade al boton para seleccionar el tema.
+
+-> Añade la selección del tema en  mi index.html de mi proyecto 
+-> Me cuesta trabajo seleccionar el tema en el menu que sale al pulsar, desaparece y no me deja elegir el tema.
 
 **pendiente**
 - añadir al listado de necesidades % del proyecto que representan y ordenarlas según estas.  
