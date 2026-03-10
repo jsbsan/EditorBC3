@@ -1,0 +1,9 @@
+version: '3.8'
+
+services:
+  mi-aplicacion-web:
+    image: jsbsan/editorbc3:3.92
+    container_name: editor-BC3-app
+    ports:
+      - "8081:80"
+    restart: unless-stopped
