@@ -84,8 +84,28 @@
         .bg-slate-50, .bg-slate-100 { background-color: var(--bg-primary) !important; }
         .bg-slate-900 { background-color: var(--bg-header) !important; }
         
+        /* [CORRECCIÓN] Resaltado dinámico para las filas (Hover) que contraste perfectamente en cualquier tema */
+        .hover\:bg-slate-50:hover, 
+        .hover\:bg-slate-100:hover,
+        .hover\:bg-slate-200:hover,
+        .hover\:bg-white:hover { 
+            background-color: color-mix(in srgb, var(--text-primary) 8%, transparent) !important; 
+        }
+        
+        /* Adaptar los botones y filas que tenían hover de colores específicos (buscador, menús, listados) */
+        .hover\:bg-blue-50:hover, .hover\:bg-yellow-50:hover, .hover\:bg-orange-50:hover,
+        .hover\:bg-teal-50:hover, .hover\:bg-cyan-50:hover, .hover\:bg-indigo-50:hover,
+        .hover\:bg-pink-50:hover, .hover\:bg-rose-50:hover, .hover\:bg-emerald-50:hover,
+        .hover\:bg-lime-50:hover, .hover\:bg-purple-50:hover, .hover\:bg-amber-50:hover {
+            background-color: color-mix(in srgb, var(--color-primary) 10%, transparent) !important;
+            border-color: color-mix(in srgb, var(--color-primary) 40%, transparent) !important;
+        }
+
         .text-slate-900, .text-slate-800, .text-slate-700 { color: var(--text-primary) !important; }
         .text-slate-600, .text-slate-500, .text-slate-400 { color: var(--text-secondary) !important; }
+        
+        /* [NUEVO] Enlazar los textos azules a la variable dinámica del Tema */
+        .text-blue-600, .text-blue-700 { color: var(--color-primary) !important; }
         
         .border-slate-100 { border-color: var(--border-color-light) !important; }
         .border-slate-200, .border-slate-300 { border-color: var(--border-color) !important; }
@@ -171,7 +191,32 @@
         /* Estilos para la tabla de mediciones detallada */
         .meas-table th { font-size: 10px; text-transform: uppercase; color: var(--text-secondary); padding: 6px 4px; }
         .meas-table td { padding: 4px 4px; border-bottom: 1px solid var(--bg-primary); }
-        .meas-table input { width: 100%; background: transparent; border: none; font-family: monospace; text-align: right; }
+        
+        /* Estilos para Inputs en línea de Mediciones */
+        .meas-input {
+            width: 100%;
+            background-color: transparent;
+            border: 1px solid transparent;
+            border-radius: 4px;
+            padding: 4px 6px;
+            color: inherit;
+            outline: none;
+            transition: all 0.2s ease;
+            font-family: inherit;
+            font-size: inherit;
+        }
+        .meas-input:hover {
+            border-color: var(--border-color);
+            background-color: rgba(255, 255, 255, 0.5);
+        }
+        [data-theme="dark"] .meas-input:hover {
+            background-color: rgba(0, 0, 0, 0.2);
+        }
+        .meas-input:focus {
+            background-color: var(--bg-surface);
+            border-color: var(--color-primary) !important;
+            box-shadow: 0 0 0 2px color-mix(in srgb, var(--color-primary) 20%, transparent);
+        }
 
         /* Estilos para Ventana Flotante */
         .floating-window {
@@ -951,10 +996,10 @@
                             <!-- Botón Copiar Tabla -->
                             <button onclick="ui.copyDecomposition()" id="btn-copy-decomp" class="text-slate-400 hover:text-blue-600 p-1 rounded hover:bg-slate-100 transition-colors" title="Copiar al portapapeles">
                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" />
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
                                 </svg>
                             </button>
-                            <button onclick="ui.openAddDecomp()" class="text-slate-400 hover:text-green-600 p-1 rounded hover:bg-slate-100 transition-colors">
+                            <button onclick="ui.addInlineMeas()" class="text-slate-400 hover:text-green-600 p-1 rounded hover:bg-slate-100 transition-colors" title="Añadir línea de medición">
                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
                                 </svg>

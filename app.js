@@ -1,16 +1,14 @@
 /**
  * PROYECTO: Visor Profesional FIEBDC-3 (BC3)
- * VERSION: 3.88 (Aviso de cierre de ventana)
+ * VERSION: 3.93 (Integración Total)
  * DESCRIPCION: 
  * - [MEJORA] Gestión inteligente de nombres de archivo al Guardar.
- * - [LOGICA] Al abrir, se conserva el nombre original.
- * - [LOGICA] Al guardar, se usa el nombre original (o el de la raíz si es nuevo) + Fecha/Hora.
- * - [NUEVO] Funciones para gestionar el modal "Acerca de".
  * - [NUEVO] Funcionalidad pasteMeasurements.
- * - [CORRECCION] Macro applyIndirectCosts ahora excluye partidas auxiliares.
- * - [NUEVO] Macro replaceTextInDescriptions para buscar y reemplazar en pliegos.
- * - [NUEVO] Macro renameCodesBatch para renombrado masivo mediante fichero CSV.
+ * - [NUEVO] Macros (Costes Indirectos, Buscar/Reemplazar, Renombrar Códigos).
  * - [NUEVO] Prevención de cierre accidental de pestaña/navegador si hay datos cargados.
+ * - [NUEVO] Edición de mediciones en línea (Inline Editing) estilo Excel.
+ * - [NUEVO] Atajo de teclado (F1) para Ayuda.
+ * - [NUEVO] Drag & Drop global para cargar archivos BC3.
  */
 
 class BC3Engine {
@@ -23,7 +21,7 @@ class BC3Engine {
             dn: 2, dd: 2, ds: 2, dr: 4, di: 2, dp: 2, dc: 2, dm: 2 
         };
         this.rootCode = null;
-        this.fileName = null; // [NUEVO] Almacena el nombre del fichero original
+        this.fileName = null; 
     }
 
     reset() {
@@ -43,7 +41,7 @@ class BC3Engine {
         if (!rootCode.endsWith('#')) rootCode += '##';
         
         this.rootCode = rootCode;
-        this.fileName = null; // Es nuevo, no tiene fichero origen
+        this.fileName = null; 
         
         this.db.set(rootCode, {
             code: rootCode,
@@ -146,7 +144,6 @@ class BC3Engine {
     }
 
     round(num) {
-       // [MODIFICADO] Opción B: Aumentar margen de error para redondeo aritmético (Half Up)
         return Math.round((num + 0.0001) * 100) / 100;
     }
 
@@ -204,7 +201,6 @@ class BC3Engine {
                 const formula = isFormula ? (m.comment || '') : '';
                 if (isFormula && formula) {
                     parcial = this.evaluateFormula(formula, m.units, m.length, m.width, m.height);
-                    // [MEJORA] Si la fórmula no usa variables de dimensión (a,b,c,d), actúa como factor multiplicador
                     if (!/[abcd]/i.test(formula) && (m.units !== 0 || m.length !== 0 || m.width !== 0 || m.height !== 0)) {
                         const val = (v) => v === 0 ? 1 : v;
                         parcial = parcial * m.units * val(m.length) * val(m.width) * val(m.height);
@@ -233,28 +229,19 @@ class BC3Engine {
         }
     }
 
-    /**
-     * Calcula el precio compuesto de un concepto.
-     * Implementa ALGORITMO DE DOBLE PASADA para porcentajes.
-     */
     calculateConceptPriceRecursively(code, visited) {
         const concept = this.resolveConcept(code);
         if (!concept) return 0;
         const realCode = concept.code;
         
-        // Evitar ciclos infinitos
         if (visited.has(realCode)) return 0;
         visited.add(realCode);
 
-        // Si es un concepto simple (sin hijos), devolver su precio directo
         if (concept.children.length === 0) {
             visited.delete(realCode);
             return concept.price;
         }
-
-        // --- ALGORITMO DE DOBLE PASADA ---
         
-        // Separar hijos en Normales y Porcentajes
         const normalChildren = [];
         const percentChildren = [];
 
@@ -268,23 +255,19 @@ class BC3Engine {
 
         let totalPrice = 0;
         
-        // Acumuladores por Naturaleza (Base Imponible)
-        let sumMO = 0; // Tipo 1: Mano de Obra
-        let sumMQ = 0; // Tipo 2: Maquinaria
-        let sumMT = 0; // Tipo 3: Materiales
-        let sumResto = 0; // Tipo 0 u otros
+        let sumMO = 0; 
+        let sumMQ = 0; 
+        let sumMT = 0; 
+        let sumResto = 0; 
 
-        // PASO 1: Calcular hijos NORMALES y acumular bases
         normalChildren.forEach(child => {
             const childPrice = this.calculateConceptPriceRecursively(child.code, visited);
             
-            // Cálculo estándar: Importe = Precio * Factor * Rendimiento
             const cantidad = child.factor * child.yield;
             const lineCost = this.round(childPrice * cantidad);
             
             totalPrice += lineCost;
 
-            // Clasificar importe según naturaleza para las bases imponibles
             const childConcept = this.resolveConcept(child.code);
             if (childConcept) {
                 const type = childConcept.type;
@@ -297,16 +280,12 @@ class BC3Engine {
             }
         });
 
-        // PASO 2: Calcular hijos PORCENTAJE
-        // Se aplican sobre los acumulados del Paso 1
         percentChildren.forEach(child => {
-            // El "Precio" del concepto porcentaje actúa como el valor del porcentaje (ej. 13.00)
             const percentValue = this.calculateConceptPriceRecursively(child.code, visited);
             
             let baseImponible = 0;
             const uCode = child.code.toUpperCase();
 
-            // Lógica de Selección de Base Imponible
             if (uCode.includes('%MO')) {
                 baseImponible = sumMO;
             } else if (uCode.includes('%MQ')) {
@@ -314,29 +293,20 @@ class BC3Engine {
             } else if (uCode.includes('%MT')) {
                 baseImponible = sumMT;
             } else if (uCode.includes('%CI') || uCode.includes('%GG')) {
-                // Costes Indirectos / Gastos Generales: Sobre el total de Costes Directos acumulados
                 baseImponible = sumMO + sumMQ + sumMT + sumResto;
             } else {
-                // Por defecto, asumimos aplicación sobre el total de Costes Directos
                 baseImponible = sumMO + sumMQ + sumMT + sumResto;
             }
 
-            // Actualización de la variable calculada (Cantidad)
-            // Fórmula requerida: Importe = (Precio_Percent * Base) / 100
-            // Para mantener compatibilidad con el cálculo estándar del motor (Precio * Cantidad),
-            // establecemos la Cantidad (Yield) como Base / 100.
             const cantidadCalculada = baseImponible / 100;
             
-            // Actualizamos los datos del hijo en memoria para que UI y Exportación sean consistentes
             child.yield = cantidadCalculada;
             child.factor = 1;
 
-            // Cálculo del importe con redondeo a 2 decimales
             const lineCost = this.round(percentValue * cantidadCalculada);
             totalPrice += lineCost;
         });
 
-        // PASO 3: Total Final
         concept.price = this.round(totalPrice);
         
         visited.delete(realCode);
@@ -432,8 +402,6 @@ class BC3Engine {
             }
         }
         
-        //this.metadata.dr = 3;
-        
         this.identifyRoot();
     }
 
@@ -491,7 +459,6 @@ class BC3Engine {
             mData.lines.push({ type, comment, units: u, length: l, width: w, height: h });
         }
 
-        // [MEJORA] Autogenerar línea de medición directa si no hay desglose (forzado)
         if (mData.lines.length === 0) {
             mData.lines.push({ 
                 type: '', 
@@ -534,7 +501,6 @@ class BC3Engine {
     num(val, type) {
         const dec = this.metadata[type.toLowerCase()] || 2;
         if (isNaN(val)) return '-';
-        // [MODIFICADO] Forzar agrupación de miles (punto) y decimales (coma)
         return val.toLocaleString('es-ES', { 
             minimumFractionDigits: dec, 
             maximumFractionDigits: dec, 
@@ -565,11 +531,9 @@ class BC3Engine {
         }
     }
 
-    // --- NUEVO: MACRO PARA APLICAR COSTES INDIRECTOS ---
     applyIndirectCosts(percentageVal) {
         if (!this.rootCode) return 0;
 
-        // 1. Asegurar que existe el concepto %CI
         const ciCode = '%CI';
         if (!this.db.has(ciCode)) {
             this.db.set(ciCode, {
@@ -582,15 +546,13 @@ class BC3Engine {
                 children: []
             });
         } else {
-            // Actualizar precio si ya existe
             const ciConcept = this.db.get(ciCode);
             ciConcept.price = percentageVal;
         }
 
-        // 2. Identificar partidas de la jerarquía principal (direct children of chapters)
         const hierarchyMemberCodes = new Set();
         for (const [code, concept] of this.db) {
-            if (code.endsWith('#')) { // Chapters and Root often end in #
+            if (code.endsWith('#')) {
                 concept.children.forEach(child => {
                     hierarchyMemberCodes.add(child.code);
                 });
@@ -599,26 +561,18 @@ class BC3Engine {
 
         let modifiedCount = 0;
 
-        // 3. Iterar sobre todos los conceptos de la BD
         for (const [code, concept] of this.db) {
-            // Filtrar: No Raíz (##), No Capítulo (#)
             if (code.endsWith('##') || code.endsWith('#')) continue;
-
-            // Filtrar: Solo partidas con descomposición (hijos > 0)
             if (!concept.children || concept.children.length === 0) continue;
-
-            // Filtrar: Debe pertenecer a la jerarquía principal (Partida de Obra)
-            // Si no está en hierarchyMemberCodes, se considera auxiliar o descomposición de otro nivel
             if (!hierarchyMemberCodes.has(code)) continue;
             
-            // Verificar si ya tiene el %CI añadido
             const hasCI = concept.children.some(child => child.code === ciCode);
             
             if (!hasCI) {
                 concept.children.push({
                     code: ciCode,
                     factor: 1,
-                    yield: 0 // Se calculará dinámicamente en calculateConceptPriceRecursively
+                    yield: 0
                 });
                 modifiedCount++;
             }
@@ -627,14 +581,12 @@ class BC3Engine {
         return modifiedCount;
     }
 
-    // --- NUEVO: MACRO BUSCAR Y REEMPLAZAR EN PLIEGOS ---
     replaceTextInDescriptions(searchText, replaceText) {
         if (!searchText) return 0;
         let modifiedCount = 0;
         
         for (const [code, concept] of this.db) {
             if (concept.description && concept.description.includes(searchText)) {
-                // Usamos split y join para reemplazar todas las ocurrencias sin problemas de inyección regex
                 concept.description = concept.description.split(searchText).join(replaceText);
                 modifiedCount++;
             }
@@ -643,33 +595,26 @@ class BC3Engine {
         return modifiedCount;
     }
 
-    // --- NUEVO: MACRO RENOMBRAR CÓDIGOS MASIVAMENTE (MEDIANTE CSV) ---
     renameCodesBatch(renamePairs) {
         let count = 0;
         for (const {oldCode, newCode} of renamePairs) {
             if (!oldCode || !newCode || oldCode === newCode) continue;
-            
-            // Si el antiguo no existe, ignorar
             if (!this.db.has(oldCode)) continue;
             
-            // Si el nuevo ya existe, advertimos y nos saltamos este para no sobrescribir datos valiosos
             if (this.db.has(newCode)) {
                 console.warn(`No se puede renombrar ${oldCode} a ${newCode}: El código nuevo ya existe.`);
                 continue;
             }
 
-            // 1. Mover el concepto en la base de datos principal
             const concept = this.db.get(oldCode);
             concept.code = newCode;
             this.db.set(newCode, concept);
             this.db.delete(oldCode);
 
-            // 2. Actualizar la variable rootCode si casualmente era la raíz (poco frecuente pero posible)
             if (this.rootCode === oldCode) {
                 this.rootCode = newCode;
             }
 
-            // 3. Recorrer TODOS los conceptos para actualizar en cascada los hijos/dependencias
             for (const [key, parentConcept] of this.db) {
                 for (const child of parentConcept.children) {
                     if (child.code === oldCode) {
@@ -678,7 +623,6 @@ class BC3Engine {
                 }
             }
 
-            // 4. Actualizar el mapa de mediciones
             const newMeasMap = new Map();
             for (const [mKey, mData] of this.measurementsMap) {
                 let newKey = mKey;
@@ -697,7 +641,6 @@ class BC3Engine {
             count++;
         }
         
-        // 5. Reconstruir por completo el mapa de padres para asegurar total integridad
         this.parentMap.clear();
         for (const [code, concept] of this.db) {
             concept.children.forEach(child => {
@@ -710,22 +653,12 @@ class BC3Engine {
 
     exportToBC3() {
         const lines = [];
-        
-        // [MODIFICADO] Función para precios (2 decimales fijos) - USA PUNTO DECIMAL
         const fNumPrice = (n) => (n === undefined || n === null) ? '' : n.toFixed(2);
-        
-        // [MODIFICADO] Función para rendimientos y factores (4 decimales fijos) - USA PUNTO DECIMAL
         const fNumYield = (n) => (n === undefined || n === null) ? '' : n.toFixed(4);
-        
-        // [MODIFICADO] Función general (para mediciones y otros) - USA PUNTO DECIMAL
         const fNum = (n) => (n === undefined || n === null) ? '' : n.toString();
-        // Modifico linea V para añadir sistema de caracteres ANSI
+        
         lines.push(`~V|JSBSAN|${this.metadata.version}|BC3 Pro Analyzer||ANSI|`);
         
-        // Sincronizamos metadatos para asegurar que el receptor sepa los decimales
-        //this.metadata.dr = 4; // Decimales de Rendimiento
-        //this.metadata.dc = 2; // Decimales de Coste (Precio)
-
         const kVals = [
             this.metadata.dn, this.metadata.dd, this.metadata.ds, 
             this.metadata.dr, this.metadata.di, this.metadata.dp, 
@@ -743,7 +676,6 @@ class BC3Engine {
                 const childParts = [];
                 c.children.forEach(child => {
                     let exportYield = child.yield;
-                    // [NUEVO] Si es porcentaje, exportar (Precio / 100) en lugar del rendimiento calculado
                     if (child.code.includes('%')) {
                         const childC = this.resolveConcept(child.code);
                         if (childC) {
@@ -785,7 +717,6 @@ class BC3Engine {
 
 const engine = new BC3Engine();
 
-// --- HELPER PARA SEGURIDAD DEL DOM ---
 const setTextSafe = (id, text) => {
     const el = document.getElementById(id);
     if (el) el.innerText = text;
@@ -797,7 +728,6 @@ const ui = {
     currentMeasKey: null,
     currentNode: null,
     
-    // [NUEVO] Gestión del Modal Acerca de...
     openAboutModal: () => {
         const modal = document.getElementById('modal-about');
         if (modal) modal.classList.add('active');
@@ -808,7 +738,6 @@ const ui = {
         if (modal) modal.classList.remove('active');
     },
     
-    // [NUEVO] Gestión del Modal de Ayuda
     openHelpModal: () => {
         const modal = document.getElementById('modal-help');
         if (modal) modal.classList.add('active');
@@ -819,7 +748,6 @@ const ui = {
         if (modal) modal.classList.remove('active');
     },
 
-    // [NUEVO] Gestión del Modal de Macros
     openMacrosModal: () => {
         if (!engine.rootCode) {
             alert("No hay ningún proyecto cargado.");
@@ -834,14 +762,10 @@ const ui = {
         if (modal) modal.classList.remove('active');
     },
 
-    // [NUEVO] Ejecutar Macro de Costes Indirectos
     runMacroCI: () => {
         ui.closeMacrosModal();
-        
-        // 1. Pedir valor al usuario
         const input = prompt("Introduzca el porcentaje de Costes Indirectos a aplicar (ej: 13 para un 13%):", "13");
-        
-        if (input === null) return; // Cancelado por usuario
+        if (input === null) return; 
         
         const val = parseFloat(input.replace(',', '.'));
         if (isNaN(val) || val < 0) {
@@ -849,7 +773,6 @@ const ui = {
             return;
         }
 
-        // 2. Ejecutar lógica en Engine
         const loader = document.getElementById('loader');
         const loaderText = document.getElementById('loader-text');
         
@@ -859,14 +782,9 @@ const ui = {
         setTimeout(() => {
             try {
                 const affectedCount = engine.applyIndirectCosts(val);
-                
-                // 3. Recalcular todo el proyecto
                 engine.recalculateProject();
-                renderAll(false); // Refrescar UI sin perder foco si es posible
-
-                // 4. Feedback
+                renderAll(false); 
                 ui.showToast(`Macro finalizada. Se añadieron CI a ${affectedCount} partidas.`);
-                
             } catch (e) {
                 console.error(e);
                 alert("Error ejecutando la macro: " + e.message);
@@ -877,15 +795,13 @@ const ui = {
         }, 50);
     },
 
-    // [NUEVO] Macro Buscar y Reemplazar Textos
     runMacroReplaceText: () => {
         ui.closeMacrosModal();
-        
         const searchText = prompt("Introduzca el texto exacto que desea buscar en los pliegos (textos largos):");
-        if (!searchText) return; // Cancelado o vacío
+        if (!searchText) return; 
         
         const replaceText = prompt("Texto encontrado será reemplazado por:\n(Deje en blanco para simplemente eliminar el texto buscado)");
-        if (replaceText === null) return; // Cancelado
+        if (replaceText === null) return; 
         
         const loader = document.getElementById('loader');
         const loaderText = document.getElementById('loader-text');
@@ -896,15 +812,10 @@ const ui = {
         setTimeout(() => {
             try {
                 const affectedCount = engine.replaceTextInDescriptions(searchText, replaceText);
-                
-                // Refrescar la vista por si el texto afectado era del nodo seleccionado actualmente
                 if (ui.currentNode) {
                     selectNode(ui.currentNode.code, null);
                 }
-
-                // Feedback
                 ui.showToast(`Macro finalizada. Textos modificados en ${affectedCount} conceptos.`);
-                
             } catch (e) {
                 console.error(e);
                 alert("Error ejecutando la macro: " + e.message);
@@ -915,14 +826,10 @@ const ui = {
         }, 50);
     },
 
-    // [NUEVO] Macro Renombrar códigos mediante archivo CSV
     runMacroRenameCodes: () => {
         ui.closeMacrosModal();
-        
-        // 1. Mostrar las instrucciones obligatorias al usuario
         alert("El fichero csv tiene que tener dos columnas: la primera con el codigo actual, la segunda con el codigo nuevo");
         
-        // 2. Crear input oculto para elegir el archivo
         const fileInput = document.createElement('input');
         fileInput.type = 'file';
         fileInput.accept = '.csv';
@@ -939,7 +846,7 @@ const ui = {
 
             const reader = new FileReader();
             reader.onload = (res) => {
-                setTimeout(() => { // Usar timeout para permitir que el loader se renderice
+                setTimeout(() => { 
                     try {
                         const text = res.target.result;
                         const lines = text.split(/\r\n|\n|\r/);
@@ -947,33 +854,23 @@ const ui = {
                         
                         for (let line of lines) {
                             if (!line.trim()) continue;
-                            
-                            // Soporta separador punto y coma o coma
                             const cols = line.split(/[;,]/);
                             if (cols.length >= 2) {
-                                // Eliminar posibles comillas sobrantes y espacios
                                 const oldCode = cols[0].trim().replace(/^"|"$/g, '');
                                 const newCode = cols[1].trim().replace(/^"|"$/g, '');
-                                
                                 if (oldCode && newCode && oldCode !== newCode) {
                                     renamePairs.push({ oldCode, newCode });
                                 }
                             }
                         }
 
-                        // Ejecutar la actualización masiva
                         const affectedCount = engine.renameCodesBatch(renamePairs);
-                        
-                        // Recalcular el proyecto
                         engine.recalculateProject();
-                        
-                        // Refrescar UI y seleccionar raíz para evitar apuntar a un objeto huérfano
                         renderAll(false);
                         if (engine.rootCode) {
                             selectNode(engine.rootCode, null); 
                         }
 
-                        // 3. Informar al usuario
                         ui.showToast(`Se han renombrado ${affectedCount} códigos.`);
                         setTimeout(() => alert(`Proceso terminado. Se han renombrado ${affectedCount} códigos.`), 100);
                         
@@ -992,9 +889,8 @@ const ui = {
                 if (loader) loader.style.display = 'none';
             };
             
-            reader.readAsText(file, 'windows-1252'); // windows-1252 o UTF-8 dependiendo de exportación de excel
+            reader.readAsText(file, 'windows-1252'); 
         };
-        
         fileInput.click();
     },
 
@@ -1118,17 +1014,12 @@ const ui = {
                     case 220: tempBuf[i] = 220; break; // Ü
                     case 191: tempBuf[i] = 191; break; // ¿
                     case 161: tempBuf[i] = 161; break; // ¡
-                    // --- NUEVOS CARACTERES: Comillas y Guiones tipográficos ---
-                    case 8220: // “ (Comilla doble curva apertura)
-                    case 8221: // ” (Comilla doble curva cierre)
-                        tempBuf[i] = 34; break; // Se convierte a comilla doble recta (")
-                    case 8216: // ‘ (Comilla simple curva apertura)
-                    case 8217: // ’ (Comilla simple curva cierre)
-                        tempBuf[i] = 39; break; // Se convierte a comilla simple recta (')
-                    case 8211: // – (Guion corto)
-                    case 8212: // — (Guion largo)
-                        tempBuf[i] = 45; break; // Se convierte a guion normal (-)
-
+                    case 8220: 
+                    case 8221: tempBuf[i] = 34; break; // "
+                    case 8216: 
+                    case 8217: tempBuf[i] = 39; break; // '
+                    case 8211: 
+                    case 8212: tempBuf[i] = 45; break; // -
                     default: tempBuf[i] = 63; // ? 
                 }
             }
@@ -1137,19 +1028,16 @@ const ui = {
         const blob = new Blob([tempBuf], { type: 'application/octet-stream' });
         const url = URL.createObjectURL(blob);
         
-        // [MEJORA] Lógica de nombre de fichero inteligente
         const now = new Date();
-        const dateStr = now.toISOString().slice(0,10); // YYYY-MM-DD
-        const timeStr = now.toTimeString().slice(0,5).replace(':','-'); // HH-MM
+        const dateStr = now.toISOString().slice(0,10); 
+        const timeStr = now.toTimeString().slice(0,5).replace(':','-'); 
         
         let baseName = "proyecto";
-        
         if (engine.fileName) {
             baseName = engine.fileName;
         } else if (engine.rootCode) {
             const root = engine.resolveConcept(engine.rootCode);
             if (root && root.summary) {
-                // Sanitizar nombre para evitar caracteres inválidos en OS
                 baseName = root.summary.replace(/[^a-z0-9áéíóúñ_\-\s]/gi, '').trim();
             }
         }
@@ -1171,8 +1059,6 @@ const ui = {
         if (!tbody) return;
         let text = "Código\tDescripción\tUd\tRendimiento\tPrecio\tImporte\n";
         for (let row of tbody.rows) {
-            // Check that row has enough cells. First cell is button, so we skip it.
-            // But we need to make sure we don't pick up empty rows.
             if (row.cells.length > 1) { 
                 const cells = Array.from(row.cells).slice(1).map(c => c.innerText.trim());
                 text += cells.join("\t") + "\n";
@@ -1194,7 +1080,6 @@ const ui = {
         ui.copyToClipboard(text, 'btn-copy-meas');
     },
 
-    // [NUEVO] Función para pegar mediciones desde portapapeles
     pasteMeasurements: async () => {
         if (!ui.currentMeasKey) {
             ui.showToast("Seleccione una partida primero.");
@@ -1212,16 +1097,8 @@ const ui = {
                 if (!row.trim()) return;
                 const cols = row.split('\t');
                 
-                // Mapeo solicitado:
-                // Col 0: Comentario
-                // Col 1: N (Unidades)
-                // Col 2: L (Longitud)
-                // Col 3: A (Anchura)
-                // Col 4: H (Altura)
-                // Col 5: Fórmula (si existe y tiene valor, sobrescribe comportamiento)
-                
                 const rawComment = cols[0] ? cols[0].trim() : "";
-                const rawN = cols[1] ? cols[1].replace(',', '.').trim() : ""; // Sanitizar decimales
+                const rawN = cols[1] ? cols[1].replace(',', '.').trim() : ""; 
                 const rawL = cols[2] ? cols[2].replace(',', '.').trim() : "";
                 const rawA = cols[3] ? cols[3].replace(',', '.').trim() : "";
                 const rawH = cols[4] ? cols[4].replace(',', '.').trim() : "";
@@ -1232,16 +1109,14 @@ const ui = {
                 const valA = parseFloat(rawA);
                 const valH = parseFloat(rawH);
 
-                // Detección de cabecera en la primera fila: Si alguna columna dimensional tiene texto
                 if (index === 0) {
                     const isHeader = (rawN && isNaN(valN)) || (rawL && isNaN(valL)) || (rawA && isNaN(valA)) || (rawH && isNaN(valH));
-                    if (isHeader) return; // Saltar esta fila
+                    if (isHeader) return; 
                 }
 
                 let type = "";
                 let comment = rawComment;
                 
-                // Si hay fórmula en la columna 6, esto tiene prioridad
                 if (rawF) {
                     type = "3";
                     comment = rawF; 
@@ -1264,10 +1139,8 @@ const ui = {
                     engine.measurementsMap.set(ui.currentMeasKey, measData);
                 }
                 
-                // Añadir las nuevas filas
                 measData.lines.push(...parsedRows);
                 
-                // Recalcular y refrescar UI
                 ui.recalculate();
                 ui.showToast(`Pegadas ${parsedRows.length} líneas de medición.`);
             } else {
@@ -1325,7 +1198,6 @@ const ui = {
         }
     },
     
-    // --- NUEVO: SISTEMA TOAST ---
     showToast: (message) => {
         let toast = document.getElementById('toast-notification');
         if (!toast) {
@@ -1428,11 +1300,10 @@ const ui = {
             codeInput.classList.remove('bg-white', 'text-slate-700');
         }
 
-        // [NUEVO] Sincronizar estado del checkbox en edición y desactivarlo
         const chkChapter = document.getElementById('decomp-is-chapter');
         if(chkChapter) {
             chkChapter.checked = child.code.endsWith('#');
-            chkChapter.disabled = true; // [CAMBIO] Desactivar checkbox en modo edición
+            chkChapter.disabled = true;
         }
 
         const cData = engine.resolveConcept(child.code);
@@ -1466,7 +1337,6 @@ const ui = {
         const btnDelete = document.getElementById('btn-delete-modal');
         if(btnDelete) btnDelete.classList.remove('hidden');
 
-        // [MODIFICADO] Mostrar Ventana Flotante (no modal)
         const win = document.getElementById('edit-window');
         if(win) win.classList.remove('hidden');
     },
@@ -1490,11 +1360,10 @@ const ui = {
             codeInput.value = "";
         }
 
-        // [NUEVO] Resetear checkbox al abrir formulario de añadir y activarlo
         const chkChapter = document.getElementById('decomp-is-chapter');
         if(chkChapter) {
             chkChapter.checked = false;
-            chkChapter.disabled = false; // [CAMBIO] Activar checkbox en modo añadir
+            chkChapter.disabled = false;
         }
 
         const summaryInput = document.getElementById('decomp-summary');
@@ -1527,7 +1396,6 @@ const ui = {
         const btnDelete = document.getElementById('btn-delete-modal');
         if(btnDelete) btnDelete.classList.add('hidden');
 
-        // [MODIFICADO] Mostrar Ventana Flotante (no modal)
         const win = document.getElementById('edit-window');
         if(win) win.classList.remove('hidden');
     },
@@ -1556,7 +1424,6 @@ const ui = {
         const btnDelete = document.getElementById('btn-delete-modal');
         if(btnDelete) btnDelete.classList.remove('hidden');
 
-        // [MODIFICADO] Mostrar Ventana Flotante (no modal)
         const win = document.getElementById('edit-window');
         if(win) win.classList.remove('hidden');
     },
@@ -1585,7 +1452,6 @@ const ui = {
         const btnDelete = document.getElementById('btn-delete-modal');
         if(btnDelete) btnDelete.classList.add('hidden');
 
-        // [MODIFICADO] Mostrar Ventana Flotante (no modal)
         const win = document.getElementById('edit-window');
         if(win) win.classList.remove('hidden');
     },
@@ -1610,7 +1476,6 @@ const ui = {
         const btnDelete = document.getElementById('btn-delete-modal');
         if(btnDelete) btnDelete.classList.add('hidden');
 
-        // [MODIFICADO] Mostrar Ventana Flotante (no modal)
         const win = document.getElementById('edit-window');
         if(win) win.classList.remove('hidden');
     },
@@ -1635,7 +1500,6 @@ const ui = {
         const btnDelete = document.getElementById('btn-delete-modal');
         if(btnDelete) btnDelete.classList.add('hidden');
 
-        // [MODIFICADO] Mostrar Ventana Flotante (no modal)
         const win = document.getElementById('edit-window');
         if(win) win.classList.remove('hidden');
     },
@@ -1656,7 +1520,6 @@ const ui = {
         const btnDelete = document.getElementById('btn-delete-modal');
         if(btnDelete) btnDelete.classList.add('hidden');
 
-        // [MODIFICADO] Mostrar Ventana Flotante (no modal)
         const win = document.getElementById('edit-window');
         if(win) win.classList.remove('hidden');
     },
@@ -1665,7 +1528,6 @@ const ui = {
         const btnDelete = document.getElementById('btn-delete-modal');
         if(btnDelete) btnDelete.classList.add('hidden'); 
         
-        // [MODIFICADO] Cerrar Ventana Flotante (no modal)
         const win = document.getElementById('edit-window');
         if(win) win.classList.add('hidden');
     },
@@ -1674,7 +1536,6 @@ const ui = {
         const win = document.getElementById('floating-list-window');
         if (win.classList.contains('hidden')) {
             win.classList.remove('hidden');
-            // Refrescar lista al abrir por si hubo cambios
             renderList(document.getElementById('search-input').value);
         } else {
             win.classList.add('hidden');
@@ -1762,7 +1623,6 @@ const ui = {
              const unitVal = document.getElementById('decomp-unit').value.trim();
              const typeVal = document.getElementById('decomp-type').value;
              
-             // [NUEVO] Lógica para añadir '#' si el checkbox está marcado
              const chkChapter = document.getElementById('decomp-is-chapter');
              if (chkChapter && chkChapter.checked) {
                  if (codeVal && !codeVal.endsWith('#')) {
@@ -1845,32 +1705,60 @@ const ui = {
         }
     },
 
-    // [NUEVO] Función para añadir el concepto seleccionado como hijo de la partida actual
+    addInlineMeas: () => {
+        if (!ui.currentNode) return;
+        const measKey = ui.currentMeasKey || ui.currentNode.code;
+        let measData = engine.measurementsMap.get(measKey);
+        if (!measData) {
+            measData = { total: 0, lines: [] };
+            engine.measurementsMap.set(measKey, measData);
+        }
+        measData.lines.push({ type: "", comment: "", units: 0, length: 0, width: 0, height: 0 });
+        
+        const parent = engine.getParent(ui.currentNode.code);
+        selectNode(ui.currentNode.code, parent ? parent.code : null);
+        
+        setTimeout(() => {
+            const inputs = document.querySelectorAll(`#measurements-body .meas-input[data-index="${measData.lines.length - 1}"][data-field="comment"]`);
+            if (inputs.length > 0) {
+                inputs[0].focus();
+                if(inputs[0].select) inputs[0].select();
+            }
+        }, 50);
+    },
+
+    deleteInlineMeas: (measKey, index) => {
+        const measData = engine.measurementsMap.get(measKey);
+        if (measData && measData.lines) {
+            measData.lines.splice(index, 1);
+            engine.recalculateProject();
+            const parent = engine.getParent(ui.currentNode.code);
+            selectNode(ui.currentNode.code, parent ? parent.code : null);
+            ui.showToast("Línea de medición eliminada");
+        }
+    },
+
     addConceptToCurrentNode: (childCode) => {
         if (!ui.currentNode) {
             ui.showToast("Seleccione primero una partida destino en el árbol.");
             return;
         }
         
-        // Evitar auto-referencia
         if (ui.currentNode.code === childCode) {
             ui.showToast("No puedes añadir una partida a sí misma.");
             return;
         }
 
-        // Crear la relación hijo
         const newChild = {
             code: childCode,
             factor: 1,
             yield: 1
         };
         
-        // Añadir al modelo
         ui.currentNode.children.push(newChild);
         engine.parentMap.set(engine.normalizeCode(childCode), ui.currentNode.code);
 
-        // Feedback y Recálculo
-        ui.recalculate(); // Esto ya refresca la vista
+        ui.recalculate();
         ui.showToast(`Añadido ${childCode} a ${ui.currentNode.code}`);
     }
 };
@@ -1905,16 +1793,14 @@ function renderList(filterText = '') {
             continue;
         }
         const div = document.createElement('div');
-        // [MODIFICADO] Añadida clase 'group' y 'relative' para manejar el hover del botón
         div.className = "flex flex-col p-2 border-b border-slate-100 hover:bg-blue-50 cursor-pointer transition-colors relative group";
         div.title = "Click: Copiar Código | Doble Click: Ver Detalle";
         
         div.innerHTML = `
             <div class="flex justify-between items-baseline mb-1">
-                <span class="font-mono text-[10px] font-bold text-blue-600 bg-blue-50 px-1 rounded">${concept.code}</span>
+                <span class="font-mono text-xs font-bold text-blue-600 bg-blue-50 px-1 rounded">${engine.normalizeCode(concept.code)}</span>
                 <div class="flex items-center gap-2">
                     <span class="text-[10px] text-slate-400">${concept.unit || '-'}</span>
-                    <!-- [NUEVO] Botón de Añadir Rápido (visible solo en hover) -->
                     <button class="btn-add-to-decomp bg-green-100 hover:bg-green-200 text-green-700 p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity" title="Añadir a la partida actual">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
@@ -1926,21 +1812,17 @@ function renderList(filterText = '') {
             <div class="text-[10px] text-slate-400 text-right mt-1 font-mono">${engine.formatCurrency(concept.price, 'DC')}</div>
         `;
         
-        // Manejador del botón Añadir
         const btnAdd = div.querySelector('.btn-add-to-decomp');
         if (btnAdd) {
             btnAdd.onclick = (e) => {
-                e.stopPropagation(); // Evitar que se dispare el click del div (copiar)
+                e.stopPropagation();
                 ui.addConceptToCurrentNode(code);
             };
         }
 
         let clickTimer = null;
 
-        // Lógica Click (Copiar) vs Doble Click (Navegar)
         div.onclick = (e) => {
-            // Si el click fue en el botón, ya se manejó con stopPropagation, esto no debería ejecutarse si burbujea correctamente, 
-            // pero por seguridad verificamos target.
             if(e.target.closest('.btn-add-to-decomp')) return;
 
             if (clickTimer) {
@@ -1948,13 +1830,11 @@ function renderList(filterText = '') {
                 clickTimer = null;
             } else {
                 clickTimer = setTimeout(() => {
-                    // Acción Single Click: Copiar Código
                     clickTimer = null;
                     navigator.clipboard.writeText(concept.code)
                         .then(() => ui.showToast(`Copiado: ${concept.code}`))
                         .catch(err => console.error("Error copiando", err));
                     
-                    // Feedback visual
                     const oldClass = div.className;
                     div.classList.add("bg-green-50");
                     setTimeout(() => div.className = oldClass, 200);
@@ -1970,7 +1850,6 @@ function renderList(filterText = '') {
                 clearTimeout(clickTimer);
                 clickTimer = null;
             }
-            // Acción Doble Click: Navegar
             document.querySelectorAll('.list-item-selected').forEach(el => el.classList.remove('list-item-selected'));
             div.classList.add('list-item-selected');
             const parent = engine.getParent(code);
@@ -1996,14 +1875,13 @@ function renderList(filterText = '') {
 }
 
 function renderAll(autoSelect = true) {
-    // [CORRECCIÓN CRÍTICA] Usar función segura para evitar crash si faltan IDs
     setTextSafe('status-version', `Formato: ${engine.metadata.version}`);
     setTextSafe('status-software', `Emisor: ${engine.metadata.software}`);
     setTextSafe('status-currency', `Divisa: ${engine.metadata.currency}`);
     setTextSafe('nodes-count', `${engine.db.size}`);
     
     const container = document.getElementById('tree-container');
-    if (!container) return; // Evitar error si no existe el contenedor
+    if (!container) return;
     container.innerHTML = '';
     
     const fragment = document.createDocumentFragment();
@@ -2021,7 +1899,6 @@ function renderAll(autoSelect = true) {
 
     container.appendChild(fragment);
 
-    // Actualizar lista si está visible
     if (!document.getElementById('floating-list-window').classList.contains('hidden')) {
         renderList();
     }
@@ -2055,7 +1932,7 @@ function buildTreeNode(code, parentCode, level = 0, visited = new Set()) {
     row.innerHTML = `
         <span class="flex-shrink-0 w-5 h-5 flex items-center justify-center text-sm">${icon}</span>
         <div class="flex flex-col overflow-hidden">
-            <span class="text-[9px] font-black font-mono text-slate-400 leading-none">${concept.code}</span>
+            <span class="text-[10px] font-black font-mono text-slate-400 leading-none">${engine.normalizeCode(concept.code)}</span>
             <span class="truncate text-[11px] ${labelClass} leading-tight mt-0.5">${concept.summary}</span>
         </div>
     `;
@@ -2124,7 +2001,7 @@ function selectNode(code, parentPath) {
     const detContent = document.getElementById('detail-content'); if(detContent) detContent.classList.remove('hidden');
 
     setTextSafe('breadcrumb-text', engine.getBreadcrumbPath(code));
-    setTextSafe('detail-code', concept.code);
+    setTextSafe('detail-code', engine.normalizeCode(concept.code));
     
     let btnWrapper = document.getElementById('btn-edit-price-wrapper');
     const summaryTitle = document.getElementById('detail-summary');
@@ -2133,7 +2010,7 @@ function selectNode(code, parentPath) {
             const headerTextContainer = document.querySelector('#selection-header .flex-1');
             if (headerTextContainer) {
                 headerTextContainer.innerHTML = `
-                <span id="detail-code" class="text-2xl font-black font-mono text-white bg-blue-600 px-4 py-2 rounded-lg uppercase tracking-widest inline-block mb-1 shadow-sm">${concept.code}</span>
+                <span id="detail-code" class="text-2xl font-black font-mono text-white bg-blue-600 px-4 py-2 rounded-lg uppercase tracking-widest inline-block mb-1 shadow-sm">${engine.normalizeCode(concept.code)}</span>
                 <div class="flex items-center gap-2 group cursor-pointer" onclick="ui.openEditSummary()">
                     <h2 id="detail-summary" class="text-xl font-extrabold text-slate-800 mt-2 leading-tight truncate group-hover:text-blue-700 transition-colors" title="Clic para editar">${concept.summary}</h2>
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-slate-300 mt-2 opacity-0 group-hover:opacity-100 transition-all" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -2235,8 +2112,8 @@ function selectNode(code, parentPath) {
                             </svg>
                         </button>
                     </td>
-                    <td class="px-6 py-3 font-mono text-[10px] text-blue-600 font-bold">
-                        <span class="mr-1 text-sm">${typeIcon}</span>${cData.code || child.code}
+                    <td class="px-6 py-3 font-mono text-sm text-blue-600 font-bold whitespace-nowrap">
+                        <span class="mr-1 text-sm">${typeIcon}</span>${engine.normalizeCode(cData.code || child.code)}
                     </td>
                     <td class="px-6 py-3 text-slate-700">${cData.summary}</td>
                     <td class="px-6 py-3 text-center text-slate-400 font-bold">${cData.unit || '-'}</td>
@@ -2257,43 +2134,43 @@ function selectNode(code, parentPath) {
         } else {
             let subtotalParcial = 0;
             let subtotalAcumulado = 0;
+            
+            const fmtIn = (v, t) => {
+                if (!v || v === 0) return '';
+                const d = engine.metadata[t.toLowerCase()] || 2;
+                return v.toFixed(d).replace('.', ',');
+            };
 
             mData.lines.forEach((m, index) => {
                 const isFormula = m.type === '3';
                 const rawComment = m.comment || '';
                 
-                if (m.type === '1') {
+                if (m.type === '1' || m.type === '2') {
+                    const isAcum = m.type === '2';
+                    const color = isAcum ? 'yellow' : 'blue';
+                    const val = isAcum ? subtotalAcumulado : subtotalParcial;
+                    
                     const tr = document.createElement('tr');
-                    tr.className = "bg-blue-50/50";
+                    tr.className = `bg-${color}-50/50 group`;
                     tr.innerHTML = `
-                        <td class="px-2 py-1 text-center">
-                            <button onclick="ui.openEditMeas('${measKey}', ${index})" class="text-blue-400 hover:text-blue-700 p-1 rounded transition-colors">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
-                            </button>
+                        <td class="px-2 py-1 text-center relative w-16">
+                            <span class="text-slate-400 font-bold text-[10px] group-hover:hidden">${index + 1}</span>
+                            <div class="hidden group-hover:flex items-center justify-center gap-1">
+                                <button onclick="ui.openEditMeas('${measKey}', ${index})" class="text-${color}-500 hover:text-${color}-700 p-1 rounded transition-colors" title="Editar en ventana">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
+                                </button>
+                                <button onclick="ui.deleteInlineMeas('${measKey}', ${index})" class="text-red-400 hover:text-red-600 p-1 rounded transition-colors" title="Eliminar subtotal">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                                </button>
+                            </div>
                         </td>
-                        <td class="text-center text-slate-400">1</td>
-                        <td colspan="7" class="px-4 py-1 text-right font-black text-blue-600 uppercase text-[9px] border-b shadow-inner">${rawComment || 'Subtotal Parcial'}</td>
-                        <td class="px-4 py-1 text-right font-bold text-blue-800">${engine.num(subtotalParcial, 'DS')}</td>
+                        <td class="text-center px-1"><input type="text" class="meas-input text-center text-${color}-600 font-bold w-full" data-index="${index}" data-field="type" value="${m.type}"></td>
+                        <td class="px-1" colspan="6"><input type="text" class="meas-input text-right font-black text-${color}-600 uppercase text-[9px] w-full" data-index="${index}" data-field="comment" value="${rawComment}"></td>
+                        <td class="text-right font-bold text-${color}-800 px-2" style="vertical-align: middle;">${engine.num(val, 'DS')}</td>
+                        <td class="px-2"></td>
                     `;
                     mBody.appendChild(tr);
-                    subtotalParcial = 0; 
-                    return;
-                }
-                
-                if (m.type === '2') {
-                    const tr = document.createElement('tr');
-                    tr.className = "bg-yellow-50/50";
-                    tr.innerHTML = `
-                        <td class="px-2 py-1 text-center">
-                            <button onclick="ui.openEditMeas('${measKey}', ${index})" class="text-yellow-600 hover:text-yellow-800 p-1 rounded transition-colors">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
-                            </button>
-                        </td>
-                        <td class="text-center text-slate-400">2</td>
-                        <td colspan="7" class="px-4 py-1 text-right font-black text-yellow-600 uppercase text-[9px] border-b shadow-inner">${rawComment || 'Subtotal Acumulado'}</td>
-                        <td class="px-4 py-1 text-right font-bold text-yellow-800">${engine.num(subtotalAcumulado, 'DS')}</td>
-                    `;
-                    mBody.appendChild(tr);
+                    if (!isAcum) subtotalParcial = 0; 
                     return;
                 }
 
@@ -2304,7 +2181,6 @@ function selectNode(code, parentPath) {
                 
                 if (isFormula && formula) {
                     parcial = engine.evaluateFormula(formula, m.units, m.length, m.width, m.height);
-                    // [MEJORA] Si la fórmula no usa variables de dimensión (a,b,c,d), actúa como factor multiplicador
                     if (!/[abcd]/i.test(formula) && (m.units !== 0 || m.length !== 0 || m.width !== 0 || m.height !== 0)) {
                         const val = (v) => v === 0 ? 1 : v;
                         parcial = parcial * m.units * val(m.length) * val(m.width) * val(m.height);
@@ -2319,24 +2195,28 @@ function selectNode(code, parentPath) {
                 subtotalAcumulado += parcial;
 
                 const tr = document.createElement('tr');
-                tr.className = "hover:bg-slate-50 transition-colors";
+                tr.className = "hover:bg-slate-50 transition-colors group border-b border-slate-100/50";
                 tr.innerHTML = `
-                    <td class="px-2 py-2 text-center">
-                        <button onclick="ui.openEditMeas('${measKey}', ${index})" class="text-slate-300 hover:text-blue-500 p-1 rounded hover:bg-slate-100 transition-colors" title="Editar medición">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
-                            </svg>
-                        </button>
+                    <td class="px-2 py-1 text-center relative w-16">
+                        <span class="text-slate-300 font-bold text-[10px] group-hover:hidden">${index + 1}</span>
+                        <div class="hidden group-hover:flex items-center justify-center gap-1">
+                            <button onclick="ui.openEditMeas('${measKey}', ${index})" class="text-slate-400 hover:text-blue-500 p-1 rounded transition-colors" title="Editar en ventana">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
+                            </button>
+                            <button onclick="ui.deleteInlineMeas('${measKey}', ${index})" class="text-red-400 hover:text-red-600 p-1 rounded transition-colors" title="Eliminar línea">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                            </button>
+                        </div>
                     </td>
-                    <td class="text-center text-slate-400">${m.type || ''}</td>
-                    <td>${comentario}</td>
-                    <td class="text-center font-bold text-slate-800">${m.units !== 0 ? engine.num(m.units, 'DN') : ''}</td>
-                    <td class="text-center text-slate-500">${m.length !== 0 ? engine.num(m.length, 'DD') : ''}</td>
-                    <td class="text-center text-slate-500">${m.width !== 0 ? engine.num(m.width, 'DD') : ''}</td>
-                    <td class="text-center text-slate-500">${m.height !== 0 ? engine.num(m.height, 'DD') : ''}</td>
-                    <td class="text-blue-600 font-medium italic text-[9px]">${formula}</td>
-                    <td class="text-right font-bold text-blue-600 bg-blue-50/30">${parcial !== 0 ? engine.num(parcial, 'DS') : ''}</td>
-                    <td class="text-right text-slate-300 bg-yellow-50/10">0.00</td>
+                    <td class="px-1"><input type="text" class="meas-input text-center text-slate-400" data-index="${index}" data-field="type" value="${m.type || ''}" placeholder="-"></td>
+                    <td class="px-1"><input type="text" class="meas-input text-left" data-index="${index}" data-field="comment" value="${isFormula ? formula : comentario}" placeholder="Descripción o fórmula..."></td>
+                    <td class="px-1"><input type="text" inputmode="decimal" class="meas-input text-right font-bold text-slate-800" data-index="${index}" data-field="units" value="${fmtIn(m.units, 'DN')}" placeholder="0"></td>
+                    <td class="px-1"><input type="text" inputmode="decimal" class="meas-input text-right text-slate-500" data-index="${index}" data-field="length" value="${fmtIn(m.length, 'DD')}" placeholder="0"></td>
+                    <td class="px-1"><input type="text" inputmode="decimal" class="meas-input text-right text-slate-500" data-index="${index}" data-field="width" value="${fmtIn(m.width, 'DD')}" placeholder="0"></td>
+                    <td class="px-1"><input type="text" inputmode="decimal" class="meas-input text-right text-slate-500" data-index="${index}" data-field="height" value="${fmtIn(m.height, 'DD')}" placeholder="0"></td>
+                    <td class="text-blue-600 font-medium italic text-[9px] px-2" style="vertical-align: middle;">${formula ? 'fx' : ''}</td>
+                    <td class="text-right font-bold text-blue-600 bg-blue-50/30 px-2" style="vertical-align: middle;">${parcial !== 0 ? engine.num(parcial, 'DS') : ''}</td>
+                    <td class="text-right text-slate-300 bg-yellow-50/10 px-2" style="vertical-align: middle;">${subtotalAcumulado !== 0 ? engine.num(subtotalAcumulado, 'DS') : ''}</td>
                 `;
                 mBody.appendChild(tr);
             });
@@ -2363,39 +2243,47 @@ function selectNode(code, parentPath) {
 
     const txtContent = document.getElementById('long-text-content');
     if(txtContent) {
-        txtContent.innerHTML = hasDescription 
-            ? concept.description.replace(/\n/g, '<br>') 
-            : `<div class="flex flex-col items-center justify-center h-full text-center gap-3">
+        if (hasDescription) {
+            // [NUEVO] Inyectar un Textarea transparente en lugar de un div estático
+            txtContent.innerHTML = `<textarea id="inline-text-edit" class="w-full h-full bg-transparent resize-none outline-none border border-transparent hover:border-slate-200 focus:bg-white focus:ring-2 focus:ring-blue-500/20 rounded p-2 -m-2 transition-all block font-inherit" spellcheck="false" title="Haz clic para editar directamente"></textarea>`;
+            
+            const inlineEdit = document.getElementById('inline-text-edit');
+            // Asignamos el valor así para evitar fallos si el texto original contiene caracteres HTML especiales
+            inlineEdit.value = concept.description;
+            
+            // Guardado automático al perder el foco (blur) o cambiar (change)
+            inlineEdit.addEventListener('change', (e) => {
+                if (ui.currentNode) {
+                    ui.currentNode.description = e.target.value;
+                }
+            });
+        } else {
+            txtContent.innerHTML = `<div class="flex flex-col items-center justify-center h-full text-center gap-3">
                  <p class="text-slate-300 italic font-normal">No existe información de pliego.</p>
                  <button onclick="ui.openEditText()" class="text-blue-500 hover:text-blue-700 text-xs font-bold uppercase tracking-wider border border-blue-200 hover:border-blue-300 bg-blue-50 px-4 py-2 rounded-lg transition-all shadow-sm hover:shadow-md">
                     + Añadir Texto
                  </button>
                </div>`;
+        }
     }
 }
 
-// INICIALIZACIÓN DE EVENTOS AL CARGAR EL DOM
 document.addEventListener('DOMContentLoaded', () => {
     
-    // Autocompletado (listeners internos de ui)
     ui.setupAutocompleteListener();
     
-    // Draggable Window
     const floatWin = document.getElementById("floating-list-window");
     if(floatWin) ui.initDraggable(floatWin);
     
-    // [NUEVO] Inicializar ventana flotante de edición
     const editWin = document.getElementById("edit-window");
     if(editWin) ui.initDraggable(editWin);
 
-    // [MODIFICADO] File Input para ABRIR (Reemplaza proyecto actual)
     const fInput = document.getElementById('fileInput');
     if(fInput) {
         fInput.addEventListener('change', async (e) => {  
             const file = e.target.files[0];
             if (!file) return;
-            // [NUEVO] Guardar nombre de archivo
-            engine.fileName = file.name.replace(/\.[^/.]+$/, ""); // Quitar extensión
+            engine.fileName = file.name.replace(/\.[^/.]+$/, ""); 
             
             const loader = document.getElementById('loader');
             if(loader) loader.style.display = 'flex';
@@ -2403,8 +2291,6 @@ document.addEventListener('DOMContentLoaded', () => {
             reader.onload = async (res) => {
                 try {
                     await engine.parse(res.target.result);
-                    
-                    // [MEJORA] Recalcular proyecto automáticamente tras la carga
                     engine.recalculateProject();
 
                     renderAll();
@@ -2424,12 +2310,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 if(loader) loader.style.display = 'none';
             };
             reader.readAsText(file, 'windows-1252'); 
-            // Reset value to allow re-importing same file
             e.target.value = '';
         });
     }
 
-    // [NUEVO] File Input para IMPORTAR (Fusionar con proyecto actual)
     const impInput = document.getElementById('importInput');
     if(impInput) {
         impInput.addEventListener('change', async (e) => {
@@ -2447,7 +2331,6 @@ document.addEventListener('DOMContentLoaded', () => {
             reader.onload = async (res) => {
                 try {
                     const count = await engine.importPartial(res.target.result);
-                    // No cambiamos la vista, solo actualizamos los datos y la lista
                     renderAll(false); 
                     if (!document.getElementById('floating-list-window').classList.contains('hidden')) {
                         renderList();
@@ -2469,24 +2352,75 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // Search Input
     const sInput = document.getElementById('search-input');
     if(sInput) {
         sInput.addEventListener('input', handleSearch);
-        // Prevenir que el click en el input propague arrastre si fuera el caso
         sInput.addEventListener('mousedown', (e) => e.stopPropagation());
     }
 
-    // [NUEVO] Prevención de cierre accidental
+    // Lógica de edición en línea (Inline Editing)
+    const measBody = document.getElementById('measurements-body');
+    if (measBody) {
+        measBody.addEventListener('change', (e) => {
+            if (e.target.classList.contains('meas-input')) {
+                const input = e.target;
+                const index = parseInt(input.dataset.index);
+                const field = input.dataset.field;
+                const measData = engine.measurementsMap.get(ui.currentMeasKey);
+                
+                if (measData && measData.lines[index]) {
+                    if (field === 'type' || field === 'comment') {
+                        measData.lines[index][field] = input.value;
+                    } else {
+                        const safeParse = (str) => {
+                            if (!str) return 0;
+                            if (str.includes(',')) {
+                                return parseFloat(str.replace(/\./g, '').replace(',', '.')) || 0;
+                            }
+                            return parseFloat(str) || 0;
+                        };
+                        measData.lines[index][field] = safeParse(input.value);
+                    }
+                    
+                    engine.recalculateProject();
+                    
+                    const activeEl = document.activeElement;
+                    let focusInfo = null;
+                    if (activeEl && activeEl.classList.contains('meas-input')) {
+                        focusInfo = { index: activeEl.dataset.index, field: activeEl.dataset.field };
+                    }
+                    
+                    const parent = engine.getParent(ui.currentNode.code);
+                    selectNode(ui.currentNode.code, parent ? parent.code : null);
+                    
+                    if (focusInfo) {
+                        setTimeout(() => {
+                            const newInputs = document.querySelectorAll(`#measurements-body .meas-input[data-index="${focusInfo.index}"][data-field="${focusInfo.field}"]`);
+                            if (newInputs.length > 0) {
+                                newInputs[0].focus();
+                                if(newInputs[0].select) newInputs[0].select();
+                            }
+                        }, 10);
+                    }
+                }
+            }
+        });
+    }
+
     window.addEventListener('beforeunload', function (e) {
-        // Solo lanzamos el aviso si hay un proyecto cargado
         if (engine && engine.db && engine.db.size > 0) {
             e.preventDefault();
-            e.returnValue = ''; // Necesario para navegadores modernos como Chrome
+            e.returnValue = ''; 
         }
     });
 
-    // [NUEVO] Drag & Drop para cargar fichero BC3
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'F1') {
+            e.preventDefault(); 
+            ui.openHelpModal();
+        }
+    });
+
     const dropZone = document.body;
 
     ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
@@ -2500,21 +2434,18 @@ document.addEventListener('DOMContentLoaded', () => {
         const file = e.dataTransfer.files[0];
         if (!file) return;
 
-        // Verificar extensión
         const fileName = file.name.toLowerCase();
         if (!fileName.endsWith('.bc3') && !fileName.endsWith('.txt')) {
             ui.showToast("Por favor, suelte un archivo FIEBDC-3 (.bc3) válido.");
             return;
         }
 
-        // Condición: Si ya hay un proyecto abierto, se cancela la carga automática
         if (engine.db.size > 0) {
             ui.showToast("Ya hay un proyecto abierto. Utilice el botón 'Abrir' para reemplazarlo.");
             return;
         }
 
-        // Cargar el archivo si no hay nada abierto
-        engine.fileName = file.name.replace(/\.[^/.]+$/, ""); // Quitar extensión
+        engine.fileName = file.name.replace(/\.[^/.]+$/, ""); 
         
         const loader = document.getElementById('loader');
         if(loader) loader.style.display = 'flex';

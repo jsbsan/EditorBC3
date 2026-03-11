@@ -623,6 +623,34 @@ Formato de salida: Entrégame el resultado directamente escrito en variables de 
 
 -> Añade la selección del tema en  mi index.html de mi proyecto 
 -> Me cuesta trabajo seleccionar el tema en el menu que sale al pulsar, desaparece y no me deja elegir el tema.
+Lo soluciona
+-> En el tema oscuro, al pasar el raton por encima, no se ve la descripción ni el importe ¿podrias solucionarlo?
+
+--------- 
+PROMPT: editor mejorado de mediciones
+--------- 
+Quiero que el el panel de mediciones hacer click sobre alguna fila de mediciones  y poderla editar directamente  
+Quiero que aparezca el botón de editar para editar las mediciones como antes y tener las dos opciones. (lo quitó)
+
+--------- 
+PROMPT: ayuda del programa al pulsar F1
+---------
+Quiero que cuando se pulse la tecla F1 aparezca la ayuda del programa
+
+
+--------- 
+PROMPT: editor mejorado de texto largo
+--------- 
+Quiero que el panel Pliego/Texto, si tiene texto, al hacer click sea editable directamente, pero deja el boton de editar para llamar al formulario de editar texto largo.
+
+
+--------- 
+PROMPT: aumentar el tamaño de la columna código
+---------
+El tamaño de la letra de la columna código es pequeña , aumentala para que se vea del mismo tamaño de letra de la columna descripción
+
+
+
 
 **pendiente**
 - añadir al listado de necesidades % del proyecto que representan y ordenarlas según estas.  
