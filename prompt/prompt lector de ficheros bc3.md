@@ -567,7 +567,7 @@ PROMPT: MACROS: reemplazar textos
 
 
 --------- 
-PROMPT: listado de descompuesto "clasico"
+PROMPT: varios listados modo "clasico"
 ---------  
 Quiero que el reporte de precios descompuestos sea similar a la imagen que te adjunto.
 (le pongo una captura de imagen de un listado de descompuestos generado por presto)
@@ -575,7 +575,7 @@ Quiero que el reporte de precios descompuestos sea similar a la imagen que te ad
 
 Quiero que el reporte de presupuestos sea similar a la imagen que te adjunto. Añada el código del capitulo y subcapitulo quitandole el caracter #
 
-**pendiente**
+
 LISTADOS "CLASICOS":
 - MANO DE OBRA -> OK
 - MAQUINARIA -> OK
@@ -650,6 +650,10 @@ PROMPT: aumentar el tamaño de la columna código
 El tamaño de la letra de la columna código es pequeña , aumentala para que se vea del mismo tamaño de letra de la columna descripción
 
 
+--------- 
+PROMPT: varios listados modo "clasico": partidas de precios auxiliares"
+--------
+Quiero que el reporte de "Partidas de precios auxiliares" sea similar a la imagen que te adjunto.
 
 
 **pendiente**

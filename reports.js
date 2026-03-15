@@ -1,7 +1,7 @@
 /**
  * PROYECTO: Visor Profesional FIEBDC-3 (BC3)
  * MODULO: Generador de Listados Jerárquicos
- * VERSION: 3.92 (Listado de Necesidades aplanado y rediseñado)
+ * VERSION: 3.93 (Listado de Auxiliares rediseñado)
  * DESCRIPCION: 
  * - [CORRECCION] Restaurado el formato legible del código (indentación y saltos de línea).
  * - [LOGICA] Mantiene el algoritmo de cálculo modificado para CP2.
@@ -12,6 +12,7 @@
  * - [MEJORA] Cálculo estricto de totalCost en listados de Necesidades basando el producto en factores pre-redondeados.
  * - [MEJORA] Eliminación visual del carácter interno '#' en todos los códigos al generar los informes.
  * - [MEJORA] Rediseño de Listado de Necesidades (lista plana ordenada por código sin subtotales de grupo, y cabecera unida CANTIDAD UD).
+ * - [MEJORA] Rediseño de Listado de Auxiliares imitando formato clásico en tabla continua con subtotales e importe.
  */
 
 const reports = {
@@ -89,7 +90,7 @@ const reports = {
                 output += tens[Math.floor(n / 10)];
                 if (n % 10 > 0) {
                     if (Math.floor(n / 10) === 2) {
-                        output = output.trim().replace('E', 'I') + units[n % 10]; 
+                        output = output.slice(0,-2)+ "I" + units[n % 10]; 
                     } else {
                         output += 'Y ' + units[n % 10];
                     }
@@ -157,7 +158,7 @@ const reports = {
                     
                     table { width: 100%; border-collapse: collapse; margin-bottom: 15px; page-break-inside: auto; }
                     tr { page-break-inside: avoid; page-break-after: auto; }
-                    th { background-color: #f1f5f9; text-align: left; padding: 8px 8px; font-weight: bold; border-bottom: 2px solid #cbd5e1; font-size: 10px; text-transform: uppercase; }
+                    th { background-color: #f1f5f9; text-align: left; padding: 8px 8px; font-weight: bold; border-bottom: 2px solid #cbd5e1; font-size: 10px;  }
                     td { padding: 6px 8px; border-bottom: 1px solid #e2e8f0; vertical-align: top; text-align: justify;}
                     
                     .text-right { text-align: right !important; }
@@ -297,7 +298,7 @@ const reports = {
         content += `
             <style>
                 .meas-rep-table { width: 100%; border-collapse: collapse; font-family: 'Arial', sans-serif; font-size: 11px; margin-bottom: 20px; }
-                .meas-rep-table th { border-top: 1px solid #000; border-bottom: 1px solid #000; padding: 6px 4px; text-align: left; background: transparent; color: #000; font-size: 10px; font-weight: bold; text-transform: uppercase; }
+                .meas-rep-table th { border-top: 1px solid #000; border-bottom: 1px solid #000; padding: 6px 4px; text-align: left; background: transparent; color: #000; font-size: 10px; font-weight: bold;  }
                 .meas-rep-table td { padding: 3px 4px; vertical-align: top; border-bottom: none; color: #000; }
                 .chapter-bg { background-color: #cffafe; font-weight: bold; color: #000; }
                 .indent-meas { padding-left: 20px; }
@@ -432,7 +433,7 @@ const reports = {
         content += `
             <style>
                 .budget-table { width: 100%; border-collapse: collapse; font-family: 'Arial', sans-serif; font-size: 11px; margin-bottom: 20px; }
-                .budget-table th { border-top: 1px solid #000; border-bottom: 1px solid #000; padding: 6px 4px; text-align: left; background: transparent; color: #000; font-size: 10px; font-weight: bold; text-transform: uppercase; }
+                .budget-table th { border-top: 1px solid #000; border-bottom: 1px solid #000; padding: 6px 4px; text-align: left; background: transparent; color: #000; font-size: 10px; font-weight: bold;  }
                 .budget-table td { padding: 4px 4px; vertical-align: top; border-bottom: none; color: #000; }
                 .chapter-bg { background-color: #cffafe; font-weight: bold; color: #000; }
             </style>
@@ -558,7 +559,7 @@ const reports = {
         content += `
             <style>
                 .summary-table { width: 100%; border-collapse: collapse; font-family: 'Arial', sans-serif; font-size: 11px; margin-bottom: 20px; }
-                .summary-table th { border-top: 1px solid #000; border-bottom: 1px solid #000; padding: 8px 4px; text-align: left; background: transparent; color: #000; font-size: 10px; font-weight: bold; text-transform: uppercase; }
+                .summary-table th { border-top: 1px solid #000; border-bottom: 1px solid #000; padding: 8px 4px; text-align: left; background: transparent; color: #000; font-size: 10px; font-weight: bold;  }
                 .summary-table td { padding: 4px 4px; vertical-align: bottom; border-bottom: none; color: #000; }
             </style>
             <table class="summary-table">
@@ -643,7 +644,7 @@ const reports = {
         content += `
             <style>
                 .price1-table { width: 100%; border-collapse: collapse; font-family: 'Arial', sans-serif; font-size: 11px; margin-bottom: 20px; }
-                .price1-table th { border-top: 1px solid #000; border-bottom: 1px solid #000; padding: 6px 4px; text-align: left; background: transparent; color: #000; font-size: 10px; font-weight: bold; text-transform: uppercase; }
+                .price1-table th { border-top: 1px solid #000; border-bottom: 1px solid #000; padding: 6px 4px; text-align: left; background: transparent; color: #000; font-size: 10px; font-weight: bold;  }
                 .price1-table td { padding: 4px 4px; vertical-align: top; border-bottom: none; color: #000; }
             </style>
             <table class="price1-table">
@@ -701,7 +702,7 @@ const reports = {
                 </tr>
                 <tr style="page-break-inside: avoid;">
                     <td colspan="3"></td>
-                    <td colspan="2" class="text-right" style="padding-bottom: 12px; text-transform: uppercase; font-size: 11px;">
+                    <td colspan="2" class="text-right" style="padding-bottom: 12px;  font-size: 11px;">
                         ${priceText}
                     </td>
                     <td></td>
@@ -744,7 +745,7 @@ const reports = {
                 
                 .cp2-total-line { margin-top: 5px; font-weight: bold; font-size: 12px; }
                 .price2-table { width: 100%; border-collapse: collapse; font-family: 'Arial', sans-serif; font-size: 11px; margin-bottom: 20px; }
-                .price2-table th { border-top: 1px solid #000; border-bottom: 1px solid #000; padding: 6px 4px; text-align: left; background: transparent; color: #000; font-size: 10px; font-weight: bold; text-transform: uppercase; }
+                .price2-table th { border-top: 1px solid #000; border-bottom: 1px solid #000; padding: 6px 4px; text-align: left; background: transparent; color: #000; font-size: 10px; font-weight: bold;  }
                 .price2-table td { padding: 4px 4px; vertical-align: top; border-bottom: none; color: #000; }
             </style>
             <table class="price2-table">
@@ -792,14 +793,14 @@ const reports = {
             let totalMQ = 0; 
             let totalResto = 0; 
 
-            // Redondeo estándar (2 decimales)
-            const round2 = (v) => Math.round(v * 100) / 100;
-
+            // Redondeo estándar (4 decimales)
+           const round4 = (v) => Math.round((v +0.0000001)* 10000) / 10000;
+           const round2 = (v) => Math.round((v +0.0000001)* 100) / 100;
             if (concept.children && concept.children.length > 0) {
                 concept.children.forEach(child => {
                     const childConcept = engine.resolveConcept(child.code);
                     if (childConcept) {
-                        const qty = round2((child.factor * child.yield)+0.0001);
+                        const qty = round4((child.factor * child.yield));
                         const type = childConcept.type;
 
                         // REGLA 1: Si es Auxiliar (Tipo 0) o tiene hijos, se desglosa recursivamente
@@ -808,18 +809,16 @@ const reports = {
                             const breakdown = reports.getExplodedUnitCost(child.code);
                             
                             // Aplicar fórmula y acumular
-                            totalMO    += round2((breakdown.mo * qty) + 0.00001);
-                            totalMQ    += round2((breakdown.mq * qty) + 0.00001);
-                            totalResto += round2((breakdown.resto * qty) + 0.00001);
-
+                            totalMO += round4((breakdown.mo * qty));
+                            totalMQ += round4((breakdown.mq * qty));
+                            totalResto += round4((breakdown.resto * qty));
                         } 
                         // REGLA 2: Recurso Simple (Tipos 1, 2, 3)
                         else {
-                            const lineCost = round2((qty * childConcept.price) + 0.0001);
-                            
-                            if (type === '1') totalMO += lineCost;
-                            else if (type === '2') totalMQ += lineCost;
-                            else totalResto += lineCost;
+                            const lineCost = round4((qty * childConcept.price ));
+                            if (type === '1') totalMO += round2(lineCost);
+                            else if (type === '2') totalMQ += round2(lineCost);
+                            else totalResto += round2(lineCost);
                         }
                     }
                 });
@@ -919,7 +918,7 @@ const reports = {
         content += `
             <style>
                 .basic-table { width: 100%; border-collapse: collapse; font-family: 'Arial', sans-serif; font-size: 11px; margin-bottom: 20px; }
-                .basic-table th { border-top: 1px solid #000; border-bottom: 1px solid #000; padding: 6px 4px; text-align: left; background: transparent; color: #000; font-size: 10px; font-weight: bold; text-transform: uppercase; }
+                .basic-table th { border-top: 1px solid #000; border-bottom: 1px solid #000; padding: 6px 4px; text-align: left; background: transparent; color: #000; font-size: 10px; font-weight: bold; }
                 .basic-table td { padding: 4px 4px; vertical-align: top; border-bottom: none; color: #000; }
             </style>
             <table class="basic-table">
@@ -1006,7 +1005,7 @@ const reports = {
         content += `
             <style>
                 .needs-table { width: 100%; border-collapse: collapse; font-family: 'Arial', sans-serif; font-size: 11px; margin-bottom: 20px; }
-                .needs-table th { border-top: 1px solid #000; border-bottom: 1px solid #000; padding: 6px 4px; text-align: left; background: transparent; color: #000; font-size: 10px; font-weight: bold; text-transform: uppercase; }
+                .needs-table th { border-top: 1px solid #000; border-bottom: 1px solid #000; padding: 6px 4px; text-align: left; background: transparent; color: #000; font-size: 10px; font-weight: bold; }
                 .needs-table td { padding: 4px 4px; vertical-align: top; border-bottom: none; color: #000; }
             </style>
             <table class="needs-table">
@@ -1215,63 +1214,96 @@ const reports = {
         if (auxiliaryItems.length === 0) {
              content += `<p class="text-center italic" style="padding:20px;">No se encontraron partidas auxiliares.</p>`;
         } else {
+             content += `
+                <style>
+                    .aux-table { width: 100%; border-collapse: collapse; font-family: 'Arial', sans-serif; font-size: 11px; margin-bottom: 20px; }
+                    .aux-table th { border-top: 1px solid #000; border-bottom: 1px solid #000; padding: 6px 4px; text-align: left; background: transparent; color: #000; font-size: 10px; font-weight: bold;  }
+                    .aux-table td { padding: 4px 4px; vertical-align: top; border-bottom: none; color: #000; }
+                </style>
+                <table class="aux-table">
+                    <thead>
+                        <tr>
+                            <th width="15%">CÓDIGO</th>
+                            <th width="12%" colspan="2">CANTIDAD UD</th>
+                            <th width="43%">RESUMEN</th>
+                            <th width="10%" class="text-right">PRECIO</th>
+                            <th width="10%" class="text-right">SUBTOTAL</th>
+                            <th width="10%" class="text-right">IMPORTE</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+
             auxiliaryItems.forEach(parent => {
-                 let descriptionHtml = '';
+                 let descHtml = '';
                  if (parent.description && parent.description.trim().length > 0) {
-                     const safeText = reports.escapeHtml(parent.description).replace(/\n/g, '<br>');
-                     descriptionHtml = `
-                        <div style="padding: 10px 15px; background-color: #ffffff; border-bottom: 1px solid #cbd5e1; color: #475569; font-size: 1em; font-family: sans-serif; font-style: normal; margin-bottom: 5px;">
-                            ${safeText}
-                        </div>
-                     `;
+                     descHtml = `<br><span style="font-weight: normal; margin-top: 4px; display: inline-block; text-align: justify;">${reports.escapeHtml(parent.description).replace(/\n/g, '<br>')}</span>`;
                  }
-    
+                 
                  content += `
-                    <div class="no-break" style="margin-top: 20px; border: 1px solid #e2e8f0; padding: 0; border-radius: 4px; overflow:hidden;">
-                        <div style="background-color: #f1f5f9; padding: 10px; border-bottom: 1px solid #e2e8f0; display:flex; justify-content:space-between; align-items:center;">
-                            <div>
-                                <span style="color:#1e40af; font-weight:bold; font-family:monospace; font-size:1.1em; margin-right:10px;">${reports.cleanCode(parent.code)}</span>
-                                <span style="font-weight:bold;">${parent.summary}</span>
-                            </div>
-                            <span style="font-weight:black; font-size:1.1em;">${reports.formatCurrency(parent.price, 'DC')}</span>
-                        </div>
-                        
-                        ${descriptionHtml}
-    
-                        <table style="width:100%; font-size: 0.9em; margin-bottom:0; border:none;">
-                            <thead style="background:white;">
-                                <tr style="color:#64748b; font-size:0.8em; text-transform:uppercase;">
-                                    <th width="15%" style="border-bottom:1px solid #eee;">Código</th>
-                                    <th width="40%" style="border-bottom:1px solid #eee;">Descripción Recurso</th>
-                                    <th width="10%" class="text-center" style="border-bottom:1px solid #eee;">Ud</th>
-                                    <th width="10%" class="text-right" style="border-bottom:1px solid #eee;">Rend.</th>
-                                    <th width="10%" class="text-right" style="border-bottom:1px solid #eee;">Precio</th>
-                                    <th width="15%" class="text-right" style="border-bottom:1px solid #eee;">Importe</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                `;
-                
-                parent.children.forEach(child => {
+                    <tr style="page-break-inside: avoid;">
+                        <td class="font-bold" style="padding-top: 15px;">${reports.cleanCode(parent.code)}</td>
+                        <td style="padding-top: 15px; width: 8%;"></td>
+                        <td class="font-bold" style="padding-top: 15px; padding-left: 4px; width: 4%;">${parent.unit || ''}</td>
+                        <td class="font-bold" style="padding-top: 15px;">${parent.summary}${descHtml}</td>
+                        <td style="padding-top: 15px;"></td>
+                        <td style="padding-top: 15px;"></td>
+                        <td style="padding-top: 15px;"></td>
+                    </tr>
+                 `;
+
+                 parent.children.forEach(child => {
                     const childConcept = engine.resolveConcept(child.code);
-                    const quantity = child.factor * child.yield;
-                    const unitPrice = childConcept ? childConcept.price : 0;
-                    const cost = quantity * unitPrice;
+                    
+                    const dr = engine.metadata.dr || 2;
+                    const dc = engine.metadata.dc || 2;
+                    const di = engine.metadata.di || 2;
+                    
+                    const roundTo = (val, dec) => Math.round((val + 0.00001) * Math.pow(10, dec)) / Math.pow(10, dec);
+                    
+                    const quantity = roundTo(child.factor * child.yield, dr);
+                    const unitPrice = childConcept ? roundTo(childConcept.price, dc) : 0;
+                    const cost = roundTo(quantity * unitPrice, di);
+                    
+                    const cCode = childConcept ? childConcept.code : child.code;
+                    const cSum = childConcept ? childConcept.summary : '<span style="color:red">No encontrado</span>';
+                    const cUnit = childConcept ? childConcept.unit : '';
                     
                     content += `
-                        <tr>
-                            <td class="font-mono text-xs" style="border-bottom:1px dashed #f1f5f9;">${reports.cleanCode(childConcept ? childConcept.code : child.code)}</td>
-                            <td class="text-xs" style="border-bottom:1px dashed #f1f5f9;">${childConcept ? childConcept.summary : '<span style="color:red">No encontrado</span>'}</td>
-                            <td class="text-center text-xs" style="border-bottom:1px dashed #f1f5f9; color:#94a3b8;">${childConcept ? childConcept.unit : ''}</td>
-                            <td class="text-right text-xs" style="border-bottom:1px dashed #f1f5f9;">${reports.format(quantity, 'DR')}</td>
-                            <td class="text-right text-xs" style="border-bottom:1px dashed #f1f5f9;">${reports.formatCurrency(unitPrice, 'DC')}</td>
-                            <td class="text-right text-xs" style="border-bottom:1px dashed #f1f5f9;">${reports.formatCurrency(cost, 'DI')}</td>
+                        <tr style="page-break-inside: avoid;">
+                            <td>${reports.cleanCode(cCode)}</td>
+                            <td class="text-right">${reports.format(quantity, 'DR')}</td>
+                            <td style="padding-left: 4px;">${cUnit}</td>
+                            <td>${cSum}</td>
+                            <td class="text-right">${reports.format(unitPrice, 'DC')}</td>
+                            <td class="text-right">${reports.format(cost, 'DI')}</td>
+                            <td></td>
                         </tr>
                     `;
-                });
-                
-                content += `</tbody></table></div>`;
+                 });
+
+                 // Fila espaciadora con el borde superior para PRECIO, SUBTOTAL e IMPORTE
+                 content += `
+                    <tr style="page-break-inside: avoid; height: 5px;">
+                        <td colspan="4"></td>
+                        <td style="border-top: 1px solid #000;"></td>
+                        <td style="border-top: 1px solid #000;"></td>
+                        <td style="border-top: 1px solid #000;"></td>
+                    </tr>
+                    <tr style="page-break-inside: avoid;">
+                        <td colspan="3"></td>
+                        <td colspan="3" style="padding-top: 2px; padding-bottom: 20px;">
+                             <div style="display: flex; align-items: baseline; padding-left: 20%;">
+                                 <span style="font-weight: bold; margin-right: 5px;">TOTAL PARTIDA</span>
+                                 <span style="flex-grow: 1; border-bottom: 1px dotted #000; margin-left: 5px;"></span>
+                             </div>
+                        </td>
+                        <td class="text-right font-bold" style="padding-top: 2px; padding-bottom: 20px;">${reports.format(parent.price, 'DI')}</td>
+                    </tr>
+                 `;
             });
+
+            content += `</tbody></table>`;
         }
 
         reports.printHTML(content, "Precios Auxiliares");
@@ -1428,7 +1460,7 @@ const reports = {
             content += `
                 <style>
                     .basic-table { width: 100%; border-collapse: collapse; font-family: 'Arial', sans-serif; font-size: 11px; margin-bottom: 20px; }
-                    .basic-table th { border-top: 1px solid #000; border-bottom: 1px solid #000; padding: 6px 4px; text-align: left; background: transparent; color: #000; font-size: 10px; font-weight: bold; text-transform: uppercase; }
+                    .basic-table th { border-top: 1px solid #000; border-bottom: 1px solid #000; padding: 6px 4px; text-align: left; background: transparent; color: #000; font-size: 10px; font-weight: bold;  }
                     .basic-table td { padding: 4px 4px; vertical-align: top; border-bottom: none; color: #000; }
                 </style>
                 <table class="basic-table">
@@ -1475,7 +1507,7 @@ const reports = {
              content += `
                 <style>
                     .basic-table { width: 100%; border-collapse: collapse; font-family: 'Arial', sans-serif; font-size: 11px; margin-bottom: 20px; }
-                    .basic-table th { border-top: 1px solid #000; border-bottom: 1px solid #000; padding: 6px 4px; text-align: left; background: transparent; color: #000; font-size: 10px; font-weight: bold; text-transform: uppercase; }
+                    .basic-table th { border-top: 1px solid #000; border-bottom: 1px solid #000; padding: 6px 4px; text-align: left; background: transparent; color: #000; font-size: 10px; font-weight: bold;  }
                     .basic-table td { padding: 4px 4px; vertical-align: top; border-bottom: none; color: #000; }
                 </style>
                 <table class="basic-table">
