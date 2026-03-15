@@ -412,7 +412,16 @@ const reports = {
                                 <td style="border-top: 1px solid #000; padding-top: 4px;"></td>
                                 <td class="text-right" style="border-top: 1px solid #000; padding-top: 4px;">${reports.format(measData.total, 'DS')}</td>
                             </tr>`;
-                    }
+                        } else {
+                        content += `
+                            <tr style="page-break-inside: avoid;">
+                                <td></td>
+                                <td class="indent-meas italic text-xs text-slate-500">(Sin medición)</td>
+                                <td colspan="4"></td>
+                                <td style="border-top: 1px solid #000; padding-top: 4px;"></td>
+                                <td class="text-right" style="border-top: 1px solid #000; padding-top: 4px;">${reports.format(0, 'DS')}</td>
+                            </tr>`;
+                        }
                 }
             }
         };
